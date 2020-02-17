@@ -1,23 +1,22 @@
 package db
 
-type FedStorer interface {
+type FedStorage interface {
 	// Add a new user to the database.
-	AddUser(username string) *FedUser
+	AddUser(username string) (*FedUser, error)
 
 	// Return the metadata of a given user identified by its id.
-	// Return nil on error.
-	GetUser(userId uint64) *FedUser
+	GetUser(userId FedId) (*FedUser, error)
 
 	// Return the metadata of a given user identified by its
-	// username. Returns nil on error.
-	FindUser(username string) *FedUser
+	// username.
+	FindUser(username string) (*FedUser, error)
 
 	// Add a post to the database.
-	AddPost(userId uint64, content string) (*FedPost, error)
+	AddPost(userId FedId, content string) (*FedPost, error)
 
 	// Return the data of a given post identified by its id.
-	GetPost(postId uint64) *FedPost
+	GetPost(postId FedId) (*FedPost, error)
 
 	// Get all posts from a given user identified by the users id.
-	GetPostsFrom(userId uint64) []*FedPost
+	GetPostsFrom(userId FedId) ([]*FedPost, error)
 }

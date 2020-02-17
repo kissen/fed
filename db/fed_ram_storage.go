@@ -1,75 +1,90 @@
 package db
 
-import "errors"
+import (
+	"fmt"
+	"github.com/pkg/errors"
+)
 
-// Implements the db/FedStorer interface. Stores all data in volatile
+// Implements the db/FedStorage interface. Stores all data in volatile
 // memory, i.e. after the process is killed, all data is gone. Only
 // useful for debugging.
 type FedRamStorage struct {
-	lastId uint64
-	users  map[uint64]*FedUser
-	posts  map[uint64]*FedPost
+	lastId FedId
+	users  map[FedId]*FedUser
+	posts  map[FedId]*FedPost
 }
 
-func NewFedRamStorage() FedStorer {
+func NewFedRamStorage() FedStorage {
 	return &FedRamStorage{
 		lastId: 0,
-		users:  make(map[uint64]*FedUser),
-		posts:  make(map[uint64]*FedPost),
+		users:  make(map[FedId]*FedUser),
+		posts:  make(map[FedId]*FedPost),
 	}
 }
 
-func (fs *FedRamStorage) AddUser(username string) *FedUser {
+func (fs *FedRamStorage) nextId() FedId {
 	id := fs.lastId
 	fs.lastId += 1
+
+	return id
+}
+
+func (fs *FedRamStorage) AddUser(username string) (*FedUser, error) {
+	id := fs.nextId()
 
 	u := &FedUser{Id: id, Name: username}
 	fs.users[id] = u
 
-	return u
+	return u, nil
 }
 
-func (fs *FedRamStorage) GetUser(userId uint64) *FedUser {
-	return fs.users[userId]
+func (fs *FedRamStorage) GetUser(userId FedId) (*FedUser, error) {
+	if user, ok := fs.users[userId]; ok {
+		return user, nil
+	} else {
+		return nil, fmt.Errorf("no user with userId=%v", userId)
+	}
 }
 
-func (fs *FedRamStorage) FindUser(username string) *FedUser {
+func (fs *FedRamStorage) FindUser(username string) (*FedUser, error) {
 	for _, user := range fs.users {
 		if user.Name == username {
-			return user
+			return user, nil
 		}
 	}
 
-	return nil
+	return nil, fmt.Errorf("no user with username=%v", username)
 }
 
-func (fs *FedRamStorage) AddPost(userId uint64, content string) (*FedPost, error) {
-	if fs.GetUser(userId) == nil {
-		err := errors.New("no such user")
-		return nil, err
+func (fs *FedRamStorage) AddPost(userId FedId, content string) (*FedPost, error) {
+	if _, err := fs.GetUser(userId); err != nil {
+		return nil, errors.Wrapf(err, "unknown author")
 	}
 
-	postId := fs.lastId
-	fs.lastId += 1
+	postId := fs.nextId()
 
-	post := &FedPost{UserId: userId, Content: content}
+	post := &FedPost{Id: postId, Author: userId, Content: content}
 	fs.posts[postId] = post
 
 	return post, nil
 }
 
-func (fs *FedRamStorage) GetPost(postId uint64) *FedPost {
-	return fs.posts[postId]
+func (fs *FedRamStorage) GetPost(postId FedId) (*FedPost, error) {
+	if post, ok := fs.posts[postId]; ok {
+		return post, nil
+	} else {
+		return nil, fmt.Errorf("no post with postId=%v", postId)
+	}
 }
 
-func (fs *FedRamStorage) GetPostsFrom(userId uint64) []*FedPost {
+func (fs *FedRamStorage) GetPostsFrom(userId FedId) ([]*FedPost, error) {
 	var ret []*FedPost
 
 	for _, post := range fs.posts {
-		if post.UserId == userId {
+		if post.Author == userId {
 			ret = append(ret, post)
 		}
 	}
 
-	return ret
+	return ret, nil
 }
