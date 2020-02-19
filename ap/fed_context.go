@@ -9,10 +9,20 @@ import (
 const _FED_CONTEXT_KEY = "FedContext"
 
 type FedContext struct {
+	// The URL scheme used in the request, e.g. "https".
 	Scheme   *string
+
+	// The hostname used in the request, e.g. "example.com".
 	Host     *string
+
+	// The base path the service is running under, e.g. /ap/.
 	BasePath *string
+
+	// Access to the database.
 	Storage  db.FedStorage
+
+	// The user this request has authenticated as.
+	Username *string
 }
 
 // Returns a new Context that contains an initialized FedContext.
@@ -43,7 +53,7 @@ func FromContext(ctx context.Context) *FedContext {
 	return fctx
 }
 
-// Return a pointer ponting to argument s. This is helpful when setting
+// Return a pointer pointing to argument s. This is helpful when setting
 // optional/pointer members of the FedContext struct.
 func Just(s string) *string {
 	return &s

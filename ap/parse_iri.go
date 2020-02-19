@@ -41,13 +41,21 @@ func parsePayloadFromIri(ctx context.Context, subpath string, iri *url.URL) (str
 
 	// match last component
 
-	payload := iriComps[len(iriComps)-1]
-
-	if payload == "" {
+	if payload := iriComps[len(iriComps)-1]; isEmpty(payload) {
 		return "", errors.New("last path component empty")
+	} else {
+		return payload, nil
 	}
+}
 
-	return payload, nil
+// Return the unique actor this IRI is pointing to. Actor IRIs have the form
+//
+//   */actor/{Actor}
+//
+// where the asterix is a placeholder for protocol, hostname and
+// base path.
+func parseActorFromIri(ctx context.Context, iri *url.URL) (string, error) {
+	return parsePayloadFromIri(ctx, "actor", iri)
 }
 
 // Return the unique owner of the outbox this IRI is pointing to.
@@ -69,7 +77,8 @@ func parseOutboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) 
 // where the asterix is a placeholder for protocol, hostname and
 // base path.
 func parseInboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) {
-	return parsePayloadFromIri(ctx, "inbox", iri)
+	s, e := parsePayloadFromIri(ctx, "inbox", iri)
+	return s, e
 }
 
 // Return the unique id of the activity this IRI is pointing to.

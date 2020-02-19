@@ -2,9 +2,11 @@ package ap
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
+	"log"
 	"net/url"
 	"sync"
 )
@@ -26,6 +28,8 @@ type FedDatabase struct {
 //
 // Used to ensure race conditions in multiple requests do not occur.
 func (f *FedDatabase) Lock(c context.Context, id *url.URL) error {
+	log.Printf("Lock(%v)", id)
+
 	f.lock.Lock()
 	return nil
 }
@@ -35,6 +39,8 @@ func (f *FedDatabase) Lock(c context.Context, id *url.URL) error {
 //
 // Used to ensure race conditions in multiple requests do not occur.
 func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
+	log.Printf("Unlock(%v)", id)
+
 	f.lock.Unlock()
 	return nil
 }
@@ -44,6 +50,8 @@ func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (contains bool, err error) {
+	log.Printf("InboxContains(inbox=%v id=%v)\n", inbox, id)
+
 	// get id of item to search
 
 	needle, err := parseActivityIdFromIri(c, id)
@@ -86,31 +94,10 @@ func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (cont
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
-	// look up owner of inbox
-	username, err := parseInboxOwnerFromIri(c, inboxIRI)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not determine owner of inbox=%v", inbox)
-	}
-
-	user, err := FromContext(c).Storage.FindUser(username)
-	if err != nil {
-		return nil, errors.Wrapf(err, "no user found for username=%v", username)
-	}
-
-	// get posts
-
-	posts, err := FromContext(c).Storage.GetPostsFrom(user.Id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "no posts found for username=%v", username)
-	}
-
-	// build up go-fed data type
+	log.Printf("GetInbox(%v)\n", inboxIRI)
 
 	inbox = streams.NewActivityStreamsOrderedCollectionPage()
-	notes := convertPostsToNotes(posts)
-	inbox.SetActivityStreamsOrderedItems(notes)
-
-	return inbox, nil
+	return inbox, errors.New("not implemented")
 }
 
 // SetInbox saves the inbox value given from GetInbox, with new items
@@ -119,7 +106,39 @@ func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (inbox voca
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrderedCollectionPage) error {
+	log.Println("SetInbox()")
+
 	return errors.New("not implemented")
+}
+
+func (f *FedDatabase) ownsInbox(c context.Context, iri *url.URL) bool {
+	username, err := parseInboxOwnerFromIri(c, iri)
+	if err != nil {
+		return false
+	}
+
+	_, err = FromContext(c).Storage.FindUser(username)
+	return err == nil
+}
+
+func (f *FedDatabase) ownsOutbox(c context.Context, iri *url.URL) bool {
+	username, err := parseOutboxOwnerFromIri(c, iri)
+	if err != nil {
+		return false
+	}
+
+	_, err = FromContext(c).Storage.FindUser(username)
+	return err == nil
+}
+
+func (f *FedDatabase) ownsActivity(c context.Context, iri *url.URL) bool {
+	id, err := parseActivityIdFromIri(c, iri)
+	if err != nil {
+		return false
+	}
+
+	_, err = FromContext(c).Storage.GetPost(id)
+	return err == nil
 }
 
 // Owns returns true if the database has an entry for the IRI and it
@@ -127,21 +146,47 @@ func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrd
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error) {
-	return false, errors.New("not implemented")
+	log.Println("Owns()")
+
+	if f.ownsInbox(c, id) {
+		return true, nil
+	}
+
+	if f.ownsOutbox(c, id) {
+		return true, nil
+	}
+
+	if f.ownsActivity(c, id) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // ActorForOutbox fetches the actor's IRI for the given outbox IRI.
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (actorIRI *url.URL, err error) {
-	return nil, errors.New("not implemented")
+	log.Printf("ActorForOutbox(%v)\n", outboxIRI)
+
+	if username, err := parseOutboxOwnerFromIri(c, outboxIRI); err != nil {
+		return nil, err
+	} else {
+		return constructActorIri(c, username), nil
+	}
 }
 
 // ActorForInbox fetches the actor's IRI for the given outbox IRI.
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actorIRI *url.URL, err error) {
-	return nil, errors.New("not implemented")
+	log.Printf("ActorForInbox(%v)\n", inboxIRI)
+
+	if username, err := parseInboxOwnerFromIri(c, inboxIRI); err != nil {
+		return nil, err
+	} else {
+		return constructActorIri(c, username), nil
+	}
 }
 
 // OutboxForInbox fetches the corresponding actor's outbox IRI for the
@@ -149,7 +194,13 @@ func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actor
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outboxIRI *url.URL, err error) {
-	return nil, errors.New("not implemented")
+	log.Printf("OutboxForInbox(%v)\n", outboxIRI)
+
+	if username, err := parseInboxOwnerFromIri(c, inboxIRI); err != nil {
+		return nil, err
+	} else {
+		return constructOutboxIri(c, username), nil
+	}
 }
 
 // Exists returns true if the database has an entry for the specified
@@ -157,14 +208,43 @@ func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outb
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Exists(c context.Context, id *url.URL) (exists bool, err error) {
-	return false, errors.New("not implemented")
+	log.Printf("Exists(%v)\n", id)
+
+	if exists, err = f.Owns(c, id); err != nil {
+		return exists, errors.Wrap(err, "using Owns() to implement Exists() failed")
+	} else {
+		return exists, nil
+	}
 }
 
 // Get returns the database entry for the specified id.
 //
 // The library makes this call only after acquiring a lock first.
-func (f *FedDatabase) Get(c context.Context, id *url.URL) (value vocab.Type, err error) {
-	return nil, errors.New("not implemented")
+func (f *FedDatabase) Get(c context.Context, iri *url.URL) (value vocab.Type, err error) {
+	log.Printf("Get(%v)\n", iri)
+
+	if _, err := parseInboxOwnerFromIri(c, iri); err == nil {
+		return f.GetInbox(c, iri)
+	}
+
+	if _, err := parseOutboxOwnerFromIri(c, iri); err == nil {
+		return f.GetOutbox(c, iri)
+	}
+
+	if id, err := parseActivityIdFromIri(c, iri); err == nil {
+		if post, err := FromContext(c).Storage.GetPost(id); err != nil {
+			return nil, err
+		} else {
+			return convertPostToNote(post), nil
+		}
+	}
+
+	if actor, err := parseActorFromIri(c, iri); err == nil {
+		// TODO
+		return nil, fmt.Errorf("getting actor=%v not yet implemented", actor)
+	}
+
+	return nil, fmt.Errorf("id=%v not understood", iri)
 }
 
 // Create adds a new entry to the database which must be able to be
@@ -180,6 +260,8 @@ func (f *FedDatabase) Get(c context.Context, id *url.URL) (value vocab.Type, err
 // Under certain conditions and network activities, Create may be called
 // multiple times for the same ActivityStreams object.
 func (f *FedDatabase) Create(c context.Context, asType vocab.Type) error {
+	log.Println("Create()")
+
 	return errors.New("not implemented")
 }
 
@@ -193,6 +275,8 @@ func (f *FedDatabase) Create(c context.Context, asType vocab.Type) error {
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Update(c context.Context, asType vocab.Type) error {
+	log.Println("Update()")
+
 	return errors.New("not implemented")
 }
 
@@ -203,6 +287,8 @@ func (f *FedDatabase) Update(c context.Context, asType vocab.Type) error {
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
+	log.Printf("Delete(%v)\n", id)
+
 	return errors.New("not implemented")
 }
 
@@ -210,7 +296,9 @@ func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
 // at the specified IRI, for prepending new items.
 //
 // The library makes this call only after acquiring a lock first.
-func (f *FedDatabase) GetOutbox(c context.Context, inboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
+func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
+	log.Printf("GetOutbox(%v)\n", outboxIRI)
+
 	return nil, errors.New("not implemented")
 }
 
@@ -220,6 +308,8 @@ func (f *FedDatabase) GetOutbox(c context.Context, inboxIRI *url.URL) (inbox voc
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) SetOutbox(c context.Context, inbox vocab.ActivityStreamsOrderedCollectionPage) error {
+	log.Println("SetOutbox()")
+
 	return errors.New("not implemented")
 }
 
@@ -230,6 +320,8 @@ func (f *FedDatabase) SetOutbox(c context.Context, inbox vocab.ActivityStreamsOr
 // The go-fed library will handle setting the 'id' property on the
 // activity or object provided with the value returned.
 func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err error) {
+	log.Println("NewId()")
+
 	return nil, errors.New("not implemented")
 }
 
@@ -240,6 +332,8 @@ func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err e
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
+	log.Printf("Followers(%v)", actorIRI)
+
 	return nil, errors.New("not implemented")
 }
 
@@ -250,6 +344,8 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
+	log.Printf("Following(%v)", actorIRI)
+
 	return nil, errors.New("not implemented")
 }
 
@@ -260,5 +356,7 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
+	log.Printf("Liked(%v)", actorIRI)
+
 	return nil, errors.New("not implemented")
 }

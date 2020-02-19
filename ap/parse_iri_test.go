@@ -4,6 +4,20 @@ import (
 	"testing"
 )
 
+func TestParseActorFromIri_ValidIri(t *testing.T) {
+	ctx := testSetUpContext()
+	url := toUrl("http://example.com/fed/actor/belano", t)
+	actor, err := parseActorFromIri(ctx, url)
+
+	if err != nil {
+		t.Errorf("got err=%v for valid url=%v", err.Error(), url)
+	}
+
+	if actor != "belano" {
+		t.Errorf("got actor=%v for url=%v", actor, url)
+	}
+}
+
 func TestParseOutboxOwnerFromIri_ValidIri(t *testing.T) {
 	ctx := testSetUpContext()
 	url := toUrl("http://example.com/fed/outbox/alice", t)
@@ -59,6 +73,16 @@ func TestParseInboxOwnerFromIri_ValidIri(t *testing.T) {
 
 	if owner != "alice" {
 		t.Errorf("got owner=%v for url=%v", owner, url)
+	}
+}
+
+func TestParseInboxOwnerFromIri_ActivityIri(t *testing.T) {
+	ctx := testSetUpContext()
+	url := toUrl("http://example.com/fed/activity/1234", t)
+	owner, err := parseInboxOwnerFromIri(ctx, url)
+
+	if err == nil {
+		t.Errorf("got err=nil owner=%v for valid url=%v", owner, url)
 	}
 }
 

@@ -2,18 +2,31 @@ package main
 
 import (
 	"context"
-	"log"
 	"errors"
 	"fmt"
 	"github.com/go-fed/activity/pub"
+	"gitlab.cs.fau.de/kissen/fed/ap"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"io"
+	"log"
 	"net/http"
 )
 
+func baseContext(store db.FedStorage) context.Context {
+	ctx := ap.WithFedContext(context.Background())
+	fc := ap.FromContext(ctx)
+
+	fc.Scheme = ap.Just("http")
+	fc.Host = ap.Just("localhost")
+	fc.BasePath = ap.Just("/ap/")
+
+	fc.Storage = store
+
+	return ctx
+}
+
 // Write out the error to an HTTP connection
 func replyWithError(w http.ResponseWriter, statusCode int, cause error) {
-	// https://golang.org/pkg/net/http/#ResponseWriter
-
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
@@ -26,109 +39,81 @@ func replyWithError(w http.ResponseWriter, statusCode int, cause error) {
 
 // Handlers adapted from tutorial on https://go-fed.org/tutorial#ActivityStreams-Types-and-Properties
 
-func newOutboxHandler(pubber pub.Pubber) http.HandlerFunc {
+func newOutboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := context.Background()
+		log.Printf("OutboxHandler(%v)", r.URL)
 
-		// Populate c with application specific information here
-		// ...
+		// populate c with application specific information here
+		c := baseContext(store)
 
-		// Try POST w/ Activity Pub
-
-		handled, err := pubber.PostOutbox(c, w, r)
-
-		if err != nil {
+		// try POST w/ Activity Pub
+		if handled, err := actor.PostOutbox(c, w, r); err != nil {
 			replyWithError(w, http.StatusInternalServerError, err)
 			return
-		}
-
-		if handled {
+		} else if handled {
 			return
 		}
 
-		// Try GET w/ Activity Pub
-
-		handled, err = pubber.GetOutbox(c, w, r)
-
-		if err != nil {
+		// try GET w/ Activity Pub
+		if handled, err := actor.GetOutbox(c, w, r); err != nil {
 			replyWithError(w, http.StatusInternalServerError, err)
 			return
-		}
-
-		if handled {
+		} else if handled {
 			return
 		}
 
-		// Handle non-ActivityPub request, such as responding with a HTML
+		// handle non-ActivityPub request, such as responding with a HTML
 		// representation with correct view permissions.
-
 		replyWithError(w, http.StatusNotImplemented, errors.New("only ActivityPub may get the outbox"))
 	}
 }
 
-func newInboxHandler(pubber pub.Pubber) http.HandlerFunc {
+func newInboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := context.Background()
+		log.Printf("InboxHandler(%v)", r.URL)
 
-		// Populate c with application specific information here
-		// ...
+		// populate c with application specific information here
+		c := baseContext(store)
 
-		// Try POST
-
-		handled, err := pubber.PostInbox(c, w, r)
-
-		if err != nil {
+		// try POST
+		if handled, err := actor.PostInbox(c, w, r); err != nil {
 			replyWithError(w, http.StatusInternalServerError, err)
 			return
-		}
-
-		if handled {
+		} else if handled {
 			return
 		}
 
-		// Try GET
-
-		handled, err = pubber.GetInbox(c, w, r)
-
-		if err != nil {
+		// try GET
+		if handled, err := actor.GetInbox(c, w, r); err != nil {
 			replyWithError(w, http.StatusInternalServerError, err)
 			return
-		}
-
-		if handled {
+		} else if handled {
 			return
 		}
 
-		// Handle non-ActivityPub request, such as responding with a HTML
+		// handle non-ActivityPub request, such as responding with a HTML
 		// representation with correct view permissions.
-
 		replyWithError(w, http.StatusNotImplemented, errors.New("only ActivityPub may get the inbox"))
 	}
 }
 
-func newActivityHandler(handler pub.HandlerFunc) http.HandlerFunc {
+func newActivityHandler(handler pub.HandlerFunc, store db.FedStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := context.Background()
+		log.Printf("ActivityHandler(%v)", r.URL)
 
-		// Populate c with application specific information here
-		// ...
+		// populate c with application specific information here
+		c := baseContext(store)
 
-		log.Println(r.URL)
-
-		handled, err := handler(c, w, r) // or myCustomVerifiedPubHandler
-
-		if err != nil {
+		// or myCustomVerifiedPubHandler
+		if handled, err := handler(c, w, r); err != nil {
 			replyWithError(w, http.StatusInternalServerError, err)
 			return
-		}
-
-		if handled {
+		} else if handled {
 			return
 		}
 
-		// Handle non-ActivityPub request, such as responding with a HTML
+		// handle non-ActivityPub request, such as responding with a HTML
 		// representation with correct view permissions.
-
 		replyWithError(w, http.StatusNotImplemented, errors.New("only ActivityPub may return activties"))
 	}
 }

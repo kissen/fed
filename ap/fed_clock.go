@@ -1,6 +1,7 @@
 package ap
 
 import (
+	"log"
 	"time"
 )
 
@@ -9,5 +10,6 @@ type FedClock struct{}
 
 // Return current server time
 func (f *FedClock) Now() time.Time {
+	log.Println("Now()")
 	return time.Now().UTC()
 }

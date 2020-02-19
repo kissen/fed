@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"log"
 )
 
 // Implements the db/FedStorage interface. Stores all data in volatile
@@ -32,10 +33,12 @@ func (fs *FedRamStorage) nextId() FedId {
 func (fs *FedRamStorage) AddUser(username string) (*FedUser, error) {
 	id := fs.nextId()
 
-	u := &FedUser{Id: id, Name: username}
-	fs.users[id] = u
+	user := &FedUser{Id: id, Name: username}
+	fs.users[id] = user
 
-	return u, nil
+	log.Printf("created FedUser w/ Id=%v Name='%v'", user.Id, user.Name)
+
+	return user, nil
 }
 
 func (fs *FedRamStorage) GetUser(userId FedId) (*FedUser, error) {
@@ -65,6 +68,8 @@ func (fs *FedRamStorage) AddPost(userId FedId, content string) (*FedPost, error)
 
 	post := &FedPost{Id: postId, Author: userId, Content: content}
 	fs.posts[postId] = post
+
+	log.Printf("created FedPost w/ Id=%v Content='%v'", post.Id, post.Content)
 
 	return post, nil
 }

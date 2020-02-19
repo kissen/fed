@@ -34,7 +34,13 @@ type FedCommonBehavior struct{}
 // authenticated must be true and error nil. The request will continue
 // to be processed.
 func (f *FedCommonBehavior) AuthenticateGetInbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
-	return nil, false, errors.New("not implemented")
+	log.Println("AuthenticateGetInbox()")
+
+	if username, _, ok := r.BasicAuth(); ok {
+		FromContext(c).Username = Just(username)
+	}
+
+	return c, true, nil
 }
 
 // AuthenticateGetOutbox delegates the authentication of a GET to an
@@ -57,7 +63,13 @@ func (f *FedCommonBehavior) AuthenticateGetInbox(c context.Context, w http.Respo
 // authenticated must be true and error nil. The request will continue
 // to be processed.
 func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
-	return nil, false, errors.New("not implemented")
+	log.Println("AuthenticateGetOutbox()")
+
+	if username, _, ok := r.BasicAuth(); ok {
+		FromContext(c).Username = Just(username)
+	}
+
+	return c, true, nil
 }
 
 // GetOutbox returns the OrderedCollection inbox of the actor for this
@@ -69,7 +81,36 @@ func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.Resp
 // Always called, regardless whether the Federated Protocol or Social
 // API is enabled.
 func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
-	return nil, errors.New("not implemented")
+	log.Println("GetOutbox()")
+
+	// look up owner of inbox
+
+	iri := r.URL
+
+	username, err := parseOutboxOwnerFromIri(c, iri)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not determine owner of iri=%v", iri)
+	}
+
+	user, err := FromContext(c).Storage.FindUser(username)
+	if err != nil {
+		return nil, errors.Wrapf(err, "no user found for username=%v", username)
+	}
+
+	// get posts
+
+	posts, err := FromContext(c).Storage.GetPostsFrom(user.Id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "no posts found for username=%v", username)
+	}
+
+	// build up go-fed data type
+
+	inbox := streams.NewActivityStreamsOrderedCollectionPage()
+	notes := convertPostsToNotes(posts)
+	inbox.SetActivityStreamsOrderedItems(notes)
+
+	return inbox, nil
 }
 
 // NewTransport returns a new Transport on behalf of a specific actor.

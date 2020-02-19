@@ -5,6 +5,16 @@ import (
 	"testing"
 )
 
+func TestConstructActorIri(t *testing.T) {
+	ctx := testSetUpContext()
+	owner := "ulises"
+	expected := "http://example.com/fed/actor/ulises"
+
+	if actual := constructActorIri(ctx, owner); expected != actual.String() {
+		t.Errorf("got bad actor IRI; expected=%v actual=%v", expected, actual)
+	}
+}
+
 func TestConstructOutboxIri(t *testing.T) {
 	ctx := testSetUpContext()
 	owner := "ulises"

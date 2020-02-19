@@ -27,6 +27,16 @@ func constructPrefixedIri(ctx context.Context, prefix, payload string) *url.URL 
 	return &iri
 }
 
+// Return an IRI pointing to an actor. Actor IRIs have the form
+//
+//   */actor/{Actor}
+//
+// where the asterix is a placeholder for protocol, hostname and
+// base path.
+func constructActorIri(ctx context.Context, actor string) *url.URL {
+	return constructPrefixedIri(ctx, "actor", actor)
+}
+
 // Return an IRI pointing to an outbox. Outbox IRIs have the form
 //
 //   */outbox/{Owner}

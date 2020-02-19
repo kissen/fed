@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
+	"log"
 	"net/http"
 )
 
@@ -28,6 +29,7 @@ type FedSocialProtocol struct{}
 // write a response to the ResponseWriter as is expected that the caller
 // to PostOutbox will do so when handling the error.
 func (f *FedSocialProtocol) PostOutboxRequestBodyHook(c context.Context, r *http.Request, data vocab.Type) (context.Context, error) {
+	log.Println("PostOutboxRequestBodyHook()")
 	return nil, errors.New("not implemented")
 }
 
@@ -50,6 +52,7 @@ func (f *FedSocialProtocol) PostOutboxRequestBodyHook(c context.Context, r *http
 // authenticated must be true and error nil. The request will continue
 // to be processed.
 func (f *FedSocialProtocol) AuthenticatePostOutbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
+	log.Println("AuthenticatePostOutbox()")
 	return nil, false, errors.New("not implemented")
 }
 
@@ -73,6 +76,8 @@ func (f *FedSocialProtocol) AuthenticatePostOutbox(c context.Context, w http.Res
 // Applications are not expected to handle every single ActivityStreams
 // type and extension. The unhandled ones are passed to DefaultCallback.
 func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrappedCallbacks, other []interface{}, err error) {
+	log.Println("Callbacks()")
+
 	// Create handles additional side effects for the Create ActivityStreams
 	// type.
 	//
@@ -181,5 +186,6 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 // type and extension, so the unhandled ones are passed to
 // DefaultCallback.
 func (f *FedSocialProtocol) DefaultCallback(c context.Context, activity pub.Activity) error {
+	log.Println("DefaultCallback()")
 	return errors.New("not implemented")
 }

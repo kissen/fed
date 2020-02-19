@@ -3,38 +3,34 @@ package main
 import (
 	"github.com/go-fed/activity/pub"
 	"github.com/gorilla/mux"
-	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/ap"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"log"
 	"net/http"
 )
 
-func listenAndAccept(storage db.FedStorer) {
+func listenAndAccept(storage db.FedStorage) {
 	r := mux.NewRouter().StrictSlash(true)
-
-	// Custom Shit
-
-	r.HandleFunc("/custom/", makeHandleRootGet(storage)).Methods("GET")
-	r.HandleFunc("/custom/inst/{userId:[0-9]+}/{postId:[0-9]+}", makeHandleUserPostGet(storage)).Methods("GET")
-	r.HandleFunc("/custom/inst/{userId:[0-9]+}", makeHandleUserPostPut(storage)).Methods("PUT")
 
 	// Activity Pub
 
-	application := &ap.FedApplication{
-		BaseIRI: "/ap/",
-		Storage: storage,
-	}
-
+	common := &ap.FedCommonBehavior{}
+	socialProtocol := &ap.FedSocialProtocol{}
+	fedProtocol := &ap.FedFederatingProtocol{}
+	database := &ap.FedDatabase{}
 	clock := &ap.FedClock{}
 
-	socialCallbacker := &ap.FedSocialCallbacker{}
+	actor := pub.NewActor(
+		common, socialProtocol, fedProtocol, database, clock,
+	)
 
-	socialPubber := pub.NewSocialPubber(clock, application, socialCallbacker)
-	activityHandler := pub.ServeActivityPubObject(application, clock)
+	handler := pub.NewActivityStreamsHandler(
+		database, clock,
+	)
 
-	r.HandleFunc("/ap/inbox/{username:[A-Za-z]+}", newInboxHandler(socialPubber)).Methods("GET", "POST")
-	r.HandleFunc("/ap/outbox/{username:[A-Za-z]+}", newOutboxHandler(socialPubber)).Methods("GET", "POST")
-	r.HandleFunc("/ap/activity/{id:[0-9]+}", newActivityHandler(activityHandler)).Methods("GET", "POST")
+	r.HandleFunc("/ap/inbox/{username:[A-Za-z]+}", newInboxHandler(actor, storage)).Methods("GET", "POST")
+	r.HandleFunc("/ap/outbox/{username:[A-Za-z]+}", newOutboxHandler(actor, storage)).Methods("GET", "POST")
+	r.HandleFunc("/ap/activity/{id:[0-9]+}", newActivityHandler(handler, storage)).Methods("GET", "POST")
 
 	// Let's rock!
 
@@ -51,7 +47,7 @@ func main() {
 
 	// set up database
 	storage := db.NewFedRamStorage()
-	john := storage.AddUser("John")
+	john, _ := storage.AddUser("John")
 	storage.AddPost(john.Id, "Hallo, Welt!")
 
 	// start http server

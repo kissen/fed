@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -29,6 +30,7 @@ type FedFederatingProtocol struct{}
 // write a response to the ResponseWriter as is expected that the caller
 // to PostInbox will do so when handling the error.
 func (f *FedFederatingProtocol) PostInboxRequestBodyHook(c context.Context, r *http.Request, activity pub.Activity) (context.Context, error) {
+	log.Println("PostInboxRequestBodyHook()")
 	return nil, errors.New("not implemented")
 }
 
@@ -49,6 +51,7 @@ func (f *FedFederatingProtocol) PostInboxRequestBodyHook(c context.Context, r *h
 // authenticated must be true and error nil. The request will continue
 // to be processed.
 func (f *FedFederatingProtocol) AuthenticatePostInbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
+	log.Println("AuthenticatePostInbox()")
 	return nil, false, errors.New("not implemented")
 }
 
@@ -67,6 +70,7 @@ func (f *FedFederatingProtocol) AuthenticatePostInbox(c context.Context, w http.
 // blocked must be false and error nil. The request will continue
 // to be processed.
 func (f *FedFederatingProtocol) Blocked(c context.Context, actorIRIs []*url.URL) (blocked bool, err error) {
+	log.Println("Blocked()")
 	return false, errors.New("not implemented")
 }
 
@@ -90,6 +94,8 @@ func (f *FedFederatingProtocol) Blocked(c context.Context, actorIRIs []*url.URL)
 // Applications are not expected to handle every single ActivityStreams
 // type and extension. The unhandled ones are passed to DefaultCallback.
 func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.FederatingWrappedCallbacks, other []interface{}, err error) {
+	log.Println("Callbacks()")
+
 	// Create handles additional side effects for the Create ActivityStreams
 	// type, specific to the application using go-fed.
 	//
@@ -231,6 +237,7 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 // type and extension, so the unhandled ones are passed to
 // DefaultCallback.
 func (f *FedFederatingProtocol) DefaultCallback(c context.Context, activity pub.Activity) error {
+	log.Println("DefaultCallback()")
 	return errors.New("not implemented")
 }
 
@@ -239,6 +246,7 @@ func (f *FedFederatingProtocol) DefaultCallback(c context.Context, activity pub.
 //
 // Zero or negative numbers indicate infinite recursion.
 func (f *FedFederatingProtocol) MaxInboxForwardingRecursionDepth(c context.Context) int {
+	log.Println("MaxInboxForwardingRecursionDepth()")
 	return -1
 }
 
@@ -248,6 +256,7 @@ func (f *FedFederatingProtocol) MaxInboxForwardingRecursionDepth(c context.Conte
 //
 // Zero or negative numbers indicate infinite recursion.
 func (f *FedFederatingProtocol) MaxDeliveryRecursionDepth(c context.Context) int {
+	log.Println("MaxDeliveryRecursionDepth()")
 	return -1
 }
 
@@ -259,6 +268,7 @@ func (f *FedFederatingProtocol) MaxDeliveryRecursionDepth(c context.Context) int
 // The activity is provided as a reference for more intelligent
 // logic to be used, but the implementation must not modify it.
 func (f *FedFederatingProtocol) FilterForwarding(c context.Context, potentialRecipients []*url.URL, a pub.Activity) (filteredRecipients []*url.URL, err error) {
+	log.Println("FilterForwarding()")
 	return nil, errors.New("not implemented")
 }
 
@@ -271,5 +281,6 @@ func (f *FedFederatingProtocol) FilterForwarding(c context.Context, potentialRec
 // Always called, regardless whether the Federated Protocol or Social
 // API is enabled.
 func (f *FedFederatingProtocol) GetInbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
+	log.Println("GetInbox()")
 	return nil, errors.New("not implemented")
 }
