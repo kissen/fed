@@ -2,10 +2,10 @@ package ap
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"github.com/go-fed/activity/pub"
-	"github.com/go-fed/activity/streams/vocab"
 	"github.com/go-fed/activity/streams"
+	"github.com/go-fed/activity/streams/vocab"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -140,9 +140,9 @@ func (f *FedCommonBehavior) NewTransport(c context.Context, actorBoxIRI *url.URL
 	log.Println("NewTransport()")
 
 	transport := &FedTransport{
-		Context: c,
+		Context:   c,
 		UserAgent: gofedAgent,
-		Target: actorBoxIRI,
+		Target:    actorBoxIRI,
 	}
 
 	return transport, nil

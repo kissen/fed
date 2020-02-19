@@ -10,16 +10,16 @@ const _FED_CONTEXT_KEY = "FedContext"
 
 type FedContext struct {
 	// The URL scheme used in the request, e.g. "https".
-	Scheme   *string
+	Scheme *string
 
 	// The hostname used in the request, e.g. "example.com".
-	Host     *string
+	Host *string
 
 	// The base path the service is running under, e.g. /ap/.
 	BasePath *string
 
 	// Access to the database.
-	Storage  db.FedStorage
+	Storage db.FedStorage
 
 	// The user this request has authenticated as.
 	Username *string
