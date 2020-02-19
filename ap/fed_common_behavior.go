@@ -2,9 +2,11 @@ package ap
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
+	"github.com/go-fed/activity/streams"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -93,6 +95,14 @@ func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab
 // Note that the library will not maintain a long-lived pointer to the
 // returned Transport so that any private credentials are able to be
 // garbage collected.
-func (f *FedCommonBehavior) NewTransport(c context.Context, actorBoxIRI *url.URL, gofedAgent string) (t pub.Transport, err error) {
-	return nil, errors.New("not implemented")
+func (f *FedCommonBehavior) NewTransport(c context.Context, actorBoxIRI *url.URL, gofedAgent string) (pub.Transport, error) {
+	log.Println("NewTransport()")
+
+	transport := &FedTransport{
+		Context: c,
+		UserAgent: gofedAgent,
+		Target: actorBoxIRI,
+	}
+
+	return transport, nil
 }
