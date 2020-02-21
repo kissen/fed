@@ -1,11 +1,14 @@
 package db
 
+import "net/url"
+
 // Represents a user registered with the service.
 type FedUser struct {
-	// The unique identifier of this record.
-	Id FedId
-
-	// The name of the user. Currently only alphanumeric ASCII
-	// will work.
 	Name string
+
+	Inbox     []*url.URL
+	Outbox    []*url.URL
+	Following []*url.URL
+	Folowers  []*url.URL
+	Liked     []*url.URL
 }
