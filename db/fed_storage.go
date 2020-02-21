@@ -6,9 +6,13 @@ import (
 )
 
 type FedStorage interface {
+	// Lifetime management.
+	Connect() error
+	Close() error
+
 	// User management.
 	RetrieveUser(username string) (*FedUser, error)
-	StoreUser(username string) (*FedUser, error)
+	StoreUser(user *FedUser) error
 
 	// Reading and writing objects. Objects are the base type
 	// for all subtypes, e.g. Actor, Activity, Link or Collection.
