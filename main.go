@@ -43,13 +43,19 @@ func listenAndAccept(storage db.FedStorage) {
 
 func main() {
 	// configure logging
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// set up database
-	storage := db.FedEmbeddedStorage{
+
+	storage := &db.FedEmbeddedStorage{
 		Filepath: "/tmp/fed.bbolt",
 	}
 
+	storage.Open()
+	defer storage.Close()
+
 	// start http server
+
 	listenAndAccept(storage)
 }

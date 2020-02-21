@@ -2,10 +2,8 @@ package ap
 
 import (
 	"context"
-	"gitlab.cs.fau.de/kissen/fed/db"
 	"net/url"
 	"path"
-	"strconv"
 )
 
 // Helper used by other construct*Iri functions.
@@ -55,16 +53,4 @@ func constructOutboxIri(ctx context.Context, owner string) *url.URL {
 // base path.
 func constructInboxIri(ctx context.Context, owner string) *url.URL {
 	return constructPrefixedIri(ctx, "inbox", owner)
-}
-
-// Return an IRI pointing to an activity. Activity IRIs have the form
-//
-//   */activity/{ActivityId}
-//
-// where the asterix is a placeholder for protocol, hostname and
-// base path. An ActivityId is a non-negative 64 bit integer
-// in base 10 representation.
-func constructActivityIri(ctx context.Context, activityId db.FedId) *url.URL {
-	activityIdStr := strconv.FormatUint(uint64(activityId), 10)
-	return constructPrefixedIri(ctx, "activity", activityIdStr)
 }

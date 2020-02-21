@@ -7,7 +7,7 @@ import (
 
 type FedStorage interface {
 	// Lifetime management.
-	Connect() error
+	Open() error
 	Close() error
 
 	// User management.

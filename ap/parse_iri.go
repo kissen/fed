@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gitlab.cs.fau.de/kissen/fed/db"
 	"net/url"
 	"path"
-	"strconv"
 	"strings"
 )
 
@@ -79,21 +77,4 @@ func parseOutboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) 
 func parseInboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) {
 	s, e := parsePayloadFromIri(ctx, "inbox", iri)
 	return s, e
-}
-
-// Return the unique id of the activity this IRI is pointing to.
-// Activity IRIs have the form
-//
-//   */activity/{ActivityId}
-//
-// where the asterix is a placeholder for protocol, hostname and
-// base path. An ActivityId is a non-negative 64 bit integer
-// in base 10 representation.
-func parseActivityIdFromIri(ctx context.Context, iri *url.URL) (db.FedId, error) {
-	if activityIdStr, err := parsePayloadFromIri(ctx, "activity", iri); err == nil {
-		id, err := strconv.ParseUint(activityIdStr, 10, 64)
-		return db.FedId(id), err
-	} else {
-		return 0, err
-	}
 }
