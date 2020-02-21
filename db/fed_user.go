@@ -1,9 +1,9 @@
 package db
 
 import (
-	"net/url"
-	"github.com/pkg/errors"
 	"encoding/json"
+	"github.com/pkg/errors"
+	"net/url"
 )
 
 // Represents a user registered with the service.

@@ -1,8 +1,8 @@
 package db
 
 import (
-	"net/url"
 	"github.com/PuerkitoBio/purell"
+	"net/url"
 )
 
 func normalizeIri(source *url.URL) string {

@@ -1,8 +1,8 @@
 package db
 
 import (
-	"os"
 	"net/url"
+	"os"
 	//"github.com/pkg/errors"
 	"path/filepath"
 	"testing"
@@ -72,8 +72,8 @@ func TestUserBucket(t *testing.T) {
 		}
 
 		user := FedUser{
-			Name: "alice",
-			Liked: liked,
+			Name:      "alice",
+			Liked:     liked,
 			Followers: followers,
 		}
 

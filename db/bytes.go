@@ -1,11 +1,11 @@
 package db
 
 import (
-	"github.com/pkg/errors"
 	"context"
 	"encoding/json"
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
+	"github.com/pkg/errors"
 )
 
 func vocabToBytes(obj vocab.Type) ([]byte, error) {
@@ -54,6 +54,6 @@ func bytesToVocab(bin []byte) (vocab.Type, error) {
 		return nil, errors.Wrap(err, "could not create type resolver")
 	}
 
-	resolver.Resolve(context.Background(), mappings)  // populates obj
+	resolver.Resolve(context.Background(), mappings) // populates obj
 	return obj, nil
 }
