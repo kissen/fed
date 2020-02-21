@@ -18,6 +18,5 @@ type FedStorage interface {
 	// for all subtypes, e.g. Actor, Activity, Link or Collection.
 	// (See https://www.w3.org/TR/activitystreams-core/#object)
 	RetrieveObject(iri *url.URL) (vocab.Type, error)
-	StoreObject(obj vocab.Type) (*url.URL, error)
-	StoreObjectAt(iri *url.URL, obj vocab.Type) error
+	StoreObject(iri *url.URL, obj vocab.Type) error
 }
