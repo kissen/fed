@@ -2,10 +2,11 @@ package ap
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"github.com/go-fed/activity/pub"
-	"github.com/go-fed/activity/streams/vocab"
 	"github.com/go-fed/activity/streams"
+	"github.com/go-fed/activity/streams/vocab"
+	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"log"
 	"net/http"
 	"net/url"
@@ -72,6 +73,21 @@ func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.Resp
 	return c, true, nil
 }
 
+func (f *FedCommonBehavior) userForOutbox(c context.Context, r *http.Request) (user *db.FedUser, err error) {
+	var username string
+	var iri *url.URL = r.URL
+
+	if username, err = parseOutboxOwnerFromIri(c, iri); err != nil {
+		return nil, errors.Wrapf(err, "cannot determine owner of iri=%v", iri)
+	}
+
+	if user, err = FromContext(c).Storage.RetrieveUser(username); err != nil {
+		return nil, errors.Wrapf(err, "no user found for username=%v", username)
+	}
+
+	return user, err
+}
+
 // GetOutbox returns the OrderedCollection inbox of the actor for this
 // context. It is up to the implementation to provide the correct
 // collection for the kind of authorization given in the request.
@@ -80,35 +96,33 @@ func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.Resp
 //
 // Always called, regardless whether the Federated Protocol or Social
 // API is enabled.
-func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
+func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (page vocab.ActivityStreamsOrderedCollectionPage, err error) {
 	log.Println("GetOutbox()")
 
-	// look up owner of inbox
+	// fetch user meta data
 
-	iri := r.URL
+	var user *db.FedUser
 
-	username, err := parseOutboxOwnerFromIri(c, iri)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not determine owner of iri=%v", iri)
+	if user, err = f.userForOutbox(c, r); err != nil {
+		return nil, err
 	}
 
-	user, err := FromContext(c).Storage.FindUser(username)
-	if err != nil {
-		return nil, errors.Wrapf(err, "no user found for username=%v", username)
+	// build up collection
+
+	collection := streams.NewActivityStreamsOrderedItemsProperty()
+
+	for _, iri := range user.Outbox {
+		if obj, err := FromContext(c).Storage.RetrieveObject(iri); err != nil {
+			return nil, errors.Wrapf(err, "missing iri=%v in database", iri)
+		} else if err := collection.AppendType(obj); err != nil {
+			return nil, errors.Wrapf(err, "cannot add iri=%v to collection", iri)
+		}
 	}
 
-	// get posts
-
-	posts, err := FromContext(c).Storage.GetPostsFrom(user.Id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "no posts found for username=%v", username)
-	}
-
-	// build up go-fed data type
+	// send out reply
 
 	inbox := streams.NewActivityStreamsOrderedCollectionPage()
-	notes := convertPostsToNotes(posts)
-	inbox.SetActivityStreamsOrderedItems(notes)
+	inbox.SetActivityStreamsOrderedItems(collection)
 
 	return inbox, nil
 }
@@ -140,9 +154,9 @@ func (f *FedCommonBehavior) NewTransport(c context.Context, actorBoxIRI *url.URL
 	log.Println("NewTransport()")
 
 	transport := &FedTransport{
-		Context: c,
+		Context:   c,
 		UserAgent: gofedAgent,
-		Target: actorBoxIRI,
+		Target:    actorBoxIRI,
 	}
 
 	return transport, nil

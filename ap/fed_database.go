@@ -6,6 +6,7 @@ import (
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"log"
 	"net/url"
 	"sync"
@@ -52,36 +53,20 @@ func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
 func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (contains bool, err error) {
 	log.Printf("InboxContains(inbox=%v id=%v)\n", inbox, id)
 
-	// get id of item to search
+	// get user
 
-	needle, err := parseActivityIdFromIri(c, id)
-	if err != nil {
-		return false, errors.Wrapf(err, "could not determine activity id from id=%v", id)
-	}
+	var user *db.FedUser
 
-	// look up owner of inbox
-
-	username, err := parseInboxOwnerFromIri(c, inbox)
-	if err != nil {
+	if username, err := parseInboxOwnerFromIri(c, inbox); err != nil {
 		return false, errors.Wrapf(err, "could not determine owner of inbox=%v", inbox)
-	}
-
-	user, err := FromContext(c).Storage.FindUser(username)
-	if err != nil {
+	} else if user, err = FromContext(c).Storage.RetrieveUser(username); err != nil {
 		return false, errors.Wrapf(err, "no user found for username=%v", username)
 	}
 
-	// get posts
+	// look for post in inbox
 
-	posts, err := FromContext(c).Storage.GetPostsFrom(user.Id)
-	if err != nil {
-		return false, errors.Wrapf(err, "no posts found for username=%v", username)
-	}
-
-	// search
-
-	for _, post := range posts {
-		if post.Id == needle {
+	for _, member := range user.Inbox {
+		if urlEq(id, member) {
 			return true, nil
 		}
 	}
@@ -112,33 +97,26 @@ func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrd
 }
 
 func (f *FedDatabase) ownsInbox(c context.Context, iri *url.URL) bool {
-	username, err := parseInboxOwnerFromIri(c, iri)
-	if err != nil {
+	if username, err := parseInboxOwnerFromIri(c, iri); err != nil {
 		return false
+	} else {
+		_, err := FromContext(c).Storage.RetrieveUser(username)
+		return err != nil
 	}
-
-	_, err = FromContext(c).Storage.FindUser(username)
-	return err == nil
 }
 
 func (f *FedDatabase) ownsOutbox(c context.Context, iri *url.URL) bool {
-	username, err := parseOutboxOwnerFromIri(c, iri)
-	if err != nil {
+	if username, err := parseOutboxOwnerFromIri(c, iri); err != nil {
 		return false
+	} else {
+		_, err := FromContext(c).Storage.RetrieveUser(username)
+		return err != nil
 	}
-
-	_, err = FromContext(c).Storage.FindUser(username)
-	return err == nil
 }
 
 func (f *FedDatabase) ownsActivity(c context.Context, iri *url.URL) bool {
-	id, err := parseActivityIdFromIri(c, iri)
-	if err != nil {
-		return false
-	}
-
-	_, err = FromContext(c).Storage.GetPost(id)
-	return err == nil
+	_, err := FromContext(c).Storage.RetrieveObject(iri)
+	return err != nil
 }
 
 // Owns returns true if the database has an entry for the IRI and it
@@ -223,6 +201,8 @@ func (f *FedDatabase) Exists(c context.Context, id *url.URL) (exists bool, err e
 func (f *FedDatabase) Get(c context.Context, iri *url.URL) (value vocab.Type, err error) {
 	log.Printf("Get(%v)\n", iri)
 
+	// try out collections
+
 	if _, err := parseInboxOwnerFromIri(c, iri); err == nil {
 		return f.GetInbox(c, iri)
 	}
@@ -231,20 +211,20 @@ func (f *FedDatabase) Get(c context.Context, iri *url.URL) (value vocab.Type, er
 		return f.GetOutbox(c, iri)
 	}
 
-	if id, err := parseActivityIdFromIri(c, iri); err == nil {
-		if post, err := FromContext(c).Storage.GetPost(id); err != nil {
-			return nil, err
-		} else {
-			return convertPostToNote(post), nil
-		}
-	}
+	// try out actors
 
 	if actor, err := parseActorFromIri(c, iri); err == nil {
 		// TODO
 		return nil, fmt.Errorf("getting actor=%v not yet implemented", actor)
 	}
 
-	return nil, fmt.Errorf("id=%v not understood", iri)
+	// try serving plain documents
+
+	if obj, err := FromContext(c).Storage.RetrieveObject(iri); err != nil {
+		return nil, errors.Wrapf(err, "could not fetch iri=%v from storage", iri)
+	} else {
+		return obj, nil
+	}
 }
 
 // Create adds a new entry to the database which must be able to be
