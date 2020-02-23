@@ -189,4 +189,11 @@ func TestStoreAndRetrieveNote(t *testing.T) {
 	if origName != parsedName {
 		t.Errorf("got bad name expected=%v got=%v", origName, parsedName)
 	}
+
+	origContent := help.Content(note)
+	parsedContent := help.Content(parsed)
+
+	if origContent != parsedContent {
+		t.Errorf("got bad content expected=%v got=%v", origName, parsedName)
+	}
 }
