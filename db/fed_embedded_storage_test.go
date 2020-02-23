@@ -1,9 +1,11 @@
 package db
 
 import (
+	"github.com/go-fed/activity/streams"
+	"github.com/go-fed/activity/streams/vocab"
+	"gitlab.cs.fau.de/kissen/fed/help"
 	"net/url"
 	"os"
-	//"github.com/pkg/errors"
 	"path/filepath"
 	"testing"
 )
@@ -119,5 +121,72 @@ func TestUserBucket(t *testing.T) {
 
 	if err := storage.Close(); err != nil {
 		t.Fatalf("close failed with err=%v", err)
+	}
+}
+
+func testNote(t *testing.T) vocab.ActivityStreamsNote {
+	name := streams.NewActivityStreamsNameProperty()
+	name.AppendXMLSchemaString("Answer July")
+
+	content := streams.NewActivityStreamsContentProperty()
+	content.AppendXMLSchemaString("Here – said the Year –")
+
+	note := streams.NewActivityStreamsNote()
+	note.SetActivityStreamsName(name)
+	note.SetActivityStreamsContent(content)
+
+	return note
+}
+
+func TestStoreAndRetrieveNote(t *testing.T) {
+	storage := FedEmbeddedStorage{
+		Filepath: dbPath(t),
+	}
+
+	// create db
+
+	if err := storage.Open(); err != nil {
+		t.Fatalf("open failed with err=%v", err)
+	}
+
+	defer deleteDbPath(t)
+
+	// put note
+
+	iri := toUrl(t, "https://example.com/poetry/emily/july")
+	note := testNote(t)
+
+	if err := storage.StoreObject(iri, note); err != nil {
+		t.Errorf("refusing to store object err=%v", err)
+	}
+
+	// close db
+
+	if err := storage.Close(); err != nil {
+		t.Fatalf("close failed with err=%v", err)
+	}
+
+	// re-open db
+
+	if err := storage.Open(); err != nil {
+		t.Fatalf("open failed with err=%v", err)
+	}
+
+	// get object
+
+	var parsed vocab.ActivityStreamsNote
+	var ok bool
+
+	if obj, err := storage.RetrieveObject(iri); err != nil {
+		t.Fatalf("getting previously added note failed err=%v", err)
+	} else if parsed, ok = obj.(vocab.ActivityStreamsNote); !ok {
+		t.Fatalf("retrieved type does not match stored type obj=%v TypeName=", obj)
+	}
+
+	origName := help.Name(note)
+	parsedName := help.Name(parsed)
+
+	if origName != parsedName {
+		t.Errorf("got bad name expected=%v got=%v", origName, parsedName)
 	}
 }

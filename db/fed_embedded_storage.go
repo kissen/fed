@@ -76,7 +76,7 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 		}
 
 		if user, viewErr = bytesToUser(bytes); viewErr != nil {
-			return errors.Wrap(err, "deserializing user failed, database corrupted?")
+			return errors.Wrap(viewErr, "deserializing user failed")
 		}
 
 		return nil
@@ -132,7 +132,7 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 		}
 
 		if obj, viewErr = bytesToVocab(bytes); viewErr != nil {
-			errors.Wrap(err, "deserializing object failed, database corrupted?")
+			return errors.Wrap(viewErr, "deserializing object failed")
 		}
 
 		return nil

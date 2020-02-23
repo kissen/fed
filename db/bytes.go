@@ -25,6 +25,10 @@ func vocabToBytes(obj vocab.Type) ([]byte, error) {
 	}
 }
 
+func addContextTo(mappings map[string]interface{}) {
+	mappings["@context"] = "https://www.w3.org/ns/activitystreams"
+}
+
 func bytesToVocab(bin []byte) (vocab.Type, error) {
 	// convert from []byte -> map
 
@@ -34,7 +38,15 @@ func bytesToVocab(bin []byte) (vocab.Type, error) {
 		return nil, errors.Wrap(err, "byte unmarshal from object failed")
 	}
 
-	// convert from map -> vocab.Type
+	// have to set the context; see
+	//
+	//   https://go-fed.org/tutorial#ActivityStreams-Serialization
+	//
+	// for details
+
+	mappings["@context"] = "https://www.w3.org/ns/activitystreams"
+
+	// convert from map -> vocab.Type; first create the resolver
 
 	var obj vocab.Type
 
@@ -44,8 +56,8 @@ func bytesToVocab(bin []byte) (vocab.Type, error) {
 			return nil
 		},
 
-		func(c context.Context, create vocab.ActivityStreamsNote) error {
-			obj = create
+		func(c context.Context, note vocab.ActivityStreamsNote) error {
+			obj = note
 			return nil
 		},
 	)
@@ -54,6 +66,15 @@ func bytesToVocab(bin []byte) (vocab.Type, error) {
 		return nil, errors.Wrap(err, "could not create type resolver")
 	}
 
-	resolver.Resolve(context.Background(), mappings) // populates obj
+	// do actual resolving; Resolve() should populate obj
+
+	if err := resolver.Resolve(context.Background(), mappings); err != nil {
+		if streams.IsUnmatchedErr(err) {
+			return nil, errors.Wrap(err, "missing callback, specific type not supported")
+		} else {
+			return nil, err
+		}
+	}
+
 	return obj, nil
 }
