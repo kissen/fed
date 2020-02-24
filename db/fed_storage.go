@@ -19,4 +19,5 @@ type FedStorage interface {
 	// (See https://www.w3.org/TR/activitystreams-core/#object)
 	RetrieveObject(iri *url.URL) (vocab.Type, error)
 	StoreObject(iri *url.URL, obj vocab.Type) error
+	DeleteObject(iri *url.URL) error
 }

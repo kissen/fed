@@ -2,7 +2,8 @@ package ap
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"fmt"
 	"net/url"
 	"path"
@@ -10,10 +11,10 @@ import (
 )
 
 // Helper used by other parse* functions.
-func parsePayloadFromIri(ctx context.Context, subpath string, iri *url.URL) (string, error) {
+func parsePayloadFromIri(c context.Context, subpath string, iri *url.URL) (string, error) {
 	// base path split into segements
 
-	base := path.Join(*FromContext(ctx).BasePath, subpath)
+	base := path.Join(*FromContext(c).BasePath, subpath)
 	baseComps := strings.Split(base, "/")
 
 	// iri path split into segments
@@ -52,8 +53,8 @@ func parsePayloadFromIri(ctx context.Context, subpath string, iri *url.URL) (str
 //
 // where the asterix is a placeholder for protocol, hostname and
 // base path.
-func parseActorFromIri(ctx context.Context, iri *url.URL) (string, error) {
-	return parsePayloadFromIri(ctx, "actor", iri)
+func parseActorFromIri(c context.Context, iri *url.URL) (string, error) {
+	return parsePayloadFromIri(c, "actor", iri)
 }
 
 // Return the unique owner of the outbox this IRI is pointing to.
@@ -63,8 +64,8 @@ func parseActorFromIri(ctx context.Context, iri *url.URL) (string, error) {
 //
 // where the asterix is a placeholder for protocol, hostname and
 // base path.
-func parseOutboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) {
-	return parsePayloadFromIri(ctx, "outbox", iri)
+func parseOutboxOwnerFromIri(c context.Context, iri *url.URL) (string, error) {
+	return parsePayloadFromIri(c, "outbox", iri)
 }
 
 // Return the unique owner of the inbox this IRI is pointing to.
@@ -74,7 +75,22 @@ func parseOutboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) 
 //
 // where the asterix is a placeholder for protocol, hostname and
 // base path.
-func parseInboxOwnerFromIri(ctx context.Context, iri *url.URL) (string, error) {
-	s, e := parsePayloadFromIri(ctx, "inbox", iri)
+func parseInboxOwnerFromIri(c context.Context, iri *url.URL) (string, error) {
+	s, e := parsePayloadFromIri(c, "inbox", iri)
 	return s, e
+}
+
+type ParseFunc func(c context.Context, iri *url.URL) (string, error)
+
+// Given a parse function (e.g. parseInboxOwnerFromIri) return the user from iri.
+func parseUserFrom(c context.Context, parse ParseFunc, iri *url.URL) (*db.FedUser, error) {
+	var user *db.FedUser
+
+	if username, err := parse(c, iri); err != nil {
+		return nil, errors.Wrapf(err, "could not determine owner of=%v", iri)
+	} else if user, err = FromContext(c).Storage.RetrieveUser(username); err != nil {
+		return nil, errors.Wrapf(err, "no user found for username=%v", username)
+	} else {
+		return user, nil
+	}
 }

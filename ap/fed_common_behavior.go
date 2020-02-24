@@ -3,10 +3,8 @@ package ap
 import (
 	"context"
 	"github.com/go-fed/activity/pub"
-	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/db"
 	"log"
 	"net/http"
 	"net/url"
@@ -73,21 +71,6 @@ func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.Resp
 	return c, true, nil
 }
 
-func (f *FedCommonBehavior) userForOutbox(c context.Context, r *http.Request) (user *db.FedUser, err error) {
-	var username string
-	var iri *url.URL = r.URL
-
-	if username, err = parseOutboxOwnerFromIri(c, iri); err != nil {
-		return nil, errors.Wrapf(err, "cannot determine owner of iri=%v", iri)
-	}
-
-	if user, err = FromContext(c).Storage.RetrieveUser(username); err != nil {
-		return nil, errors.Wrapf(err, "no user found for username=%v", username)
-	}
-
-	return user, err
-}
-
 // GetOutbox returns the OrderedCollection inbox of the actor for this
 // context. It is up to the implementation to provide the correct
 // collection for the kind of authorization given in the request.
@@ -96,35 +79,14 @@ func (f *FedCommonBehavior) userForOutbox(c context.Context, r *http.Request) (u
 //
 // Always called, regardless whether the Federated Protocol or Social
 // API is enabled.
-func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (page vocab.ActivityStreamsOrderedCollectionPage, err error) {
+func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Println("GetOutbox()")
 
-	// fetch user meta data
-
-	var user *db.FedUser
-
-	if user, err = f.userForOutbox(c, r); err != nil {
-		return nil, err
+	if user, err := parseUserFrom(c, parseOutboxOwnerFromIri, r.URL); err != nil {
+		return nil, errors.Wrap(err, "no such outbox")
+	} else {
+		return collectPage(c, user.Outbox)
 	}
-
-	// build up collection
-
-	collection := streams.NewActivityStreamsOrderedItemsProperty()
-
-	for _, iri := range user.Outbox {
-		if obj, err := FromContext(c).Storage.RetrieveObject(iri); err != nil {
-			return nil, errors.Wrapf(err, "missing iri=%v in database", iri)
-		} else if err := collection.AppendType(obj); err != nil {
-			return nil, errors.Wrapf(err, "cannot add iri=%v to collection", iri)
-		}
-	}
-
-	// send out reply
-
-	inbox := streams.NewActivityStreamsOrderedCollectionPage()
-	inbox.SetActivityStreamsOrderedItems(collection)
-
-	return inbox, nil
 }
 
 // NewTransport returns a new Transport on behalf of a specific actor.

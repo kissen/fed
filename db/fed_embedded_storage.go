@@ -62,10 +62,10 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 	bucketKey := []byte(_USERS_BUCKET)
 	userKey := []byte(username)
 
+	var bytes []byte
+
 	err = fs.connection.View(func(tx *bbolt.Tx) error {
 		var bucket *bbolt.Bucket
-		var bytes []byte
-		var viewErr error
 
 		if bucket = tx.Bucket(bucketKey); bucket == nil {
 			return errors.New("cannot open users bucket")
@@ -75,12 +75,16 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 			return fmt.Errorf("no user with username=%v", username)
 		}
 
-		if user, viewErr = bytesToUser(bytes); viewErr != nil {
-			return errors.Wrap(viewErr, "deserializing user failed")
-		}
-
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if user, err = bytesToUser(bytes); err != nil {
+		return nil, errors.Wrap(err, "deserializing user failed")
+	}
 
 	return user, err
 }
@@ -118,10 +122,10 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 	bucketKey := []byte(_DOCUMENTS_BUCKET)
 	documentKey := []byte(normalizeIri(iri))
 
+	var bytes []byte
+
 	err = fs.connection.View(func(tx *bbolt.Tx) error {
 		var bucket *bbolt.Bucket
-		var bytes []byte
-		var viewErr error
 
 		if bucket = tx.Bucket(bucketKey); bucket == nil {
 			return errors.New("could not open documents bucket")
@@ -131,12 +135,16 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 			return fmt.Errorf("no entry for iri=%v", iri)
 		}
 
-		if obj, viewErr = bytesToVocab(bytes); viewErr != nil {
-			return errors.Wrap(viewErr, "deserializing object failed")
-		}
-
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if obj, err = bytesToVocab(bytes); err != nil {
+		return nil, errors.Wrap(err, "deserializing object failed")
+	}
 
 	return obj, err
 }
@@ -157,11 +165,33 @@ func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 		var updateErr error
 
 		if bucket = tx.Bucket(bucketKey); bucket == nil {
-			return errors.New("could not docments bucket")
+			return errors.New("could not open documents bucket")
 		}
 
 		if updateErr = bucket.Put(documentKey, documentValue); updateErr != nil {
 			return errors.Wrap(updateErr, "put into bucket failed")
+		}
+
+		return nil
+	})
+}
+
+func (fs *FedEmbeddedStorage) DeleteObject(iri *url.URL) error {
+	log.Println("DeleteObject()")
+
+	bucketKey := []byte(_DOCUMENTS_BUCKET)
+	documentKey := []byte(normalizeIri(iri))
+
+	return fs.connection.Update(func(tx *bbolt.Tx) error {
+		var bucket *bbolt.Bucket
+		var updateErr error
+
+		if bucket = tx.Bucket(bucketKey); bucket == nil {
+			return errors.New("could not open documents bucket")
+		}
+
+		if updateErr = bucket.Delete(documentKey); updateErr != nil {
+			return errors.Wrap(updateErr, "delete from bucket failed")
 		}
 
 		return nil
