@@ -142,7 +142,7 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 		return nil, err
 	}
 
-	if obj, err = bytesToVocab(bytes); err != nil {
+	if obj, err = BytesToVocab(bytes); err != nil {
 		return nil, errors.Wrap(err, "deserializing object failed")
 	}
 
@@ -155,7 +155,7 @@ func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 	bucketKey := []byte(_DOCUMENTS_BUCKET)
 	documentKey := []byte(normalizeIri(iri))
 
-	documentValue, err := vocabToBytes(obj)
+	documentValue, err := VocabToBytes(obj)
 	if err != nil {
 		return errors.Wrap(err, "could not serialize object")
 	}

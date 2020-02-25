@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func vocabToBytes(obj vocab.Type) ([]byte, error) {
+func VocabToBytes(obj vocab.Type) ([]byte, error) {
 	// convert from vocab.Type -> map
 
 	mappings, err := obj.Serialize()
@@ -25,11 +25,7 @@ func vocabToBytes(obj vocab.Type) ([]byte, error) {
 	}
 }
 
-func addContextTo(mappings map[string]interface{}) {
-	mappings["@context"] = "https://www.w3.org/ns/activitystreams"
-}
-
-func bytesToVocab(bin []byte) (vocab.Type, error) {
+func BytesToVocab(bin []byte) (vocab.Type, error) {
 	// convert from []byte -> map
 
 	var mappings map[string]interface{}
