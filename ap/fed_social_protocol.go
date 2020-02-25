@@ -2,7 +2,6 @@ package ap
 
 import (
 	"context"
-	"errors"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
 	"log"
@@ -30,7 +29,7 @@ type FedSocialProtocol struct{}
 // to PostOutbox will do so when handling the error.
 func (f *FedSocialProtocol) PostOutboxRequestBodyHook(c context.Context, r *http.Request, data vocab.Type) (context.Context, error) {
 	log.Println("PostOutboxRequestBodyHook()")
-	return nil, errors.New("not implemented")
+	return c, nil
 }
 
 // AuthenticatePostOutbox delegates the authentication of a POST to an
@@ -53,7 +52,7 @@ func (f *FedSocialProtocol) PostOutboxRequestBodyHook(c context.Context, r *http
 // to be processed.
 func (f *FedSocialProtocol) AuthenticatePostOutbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
 	log.Println("AuthenticatePostOutbox()")
-	return nil, false, errors.New("not implemented")
+	return c, true, nil
 }
 
 // Callbacks returns the application logic that handles ActivityStreams
@@ -85,7 +84,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// property and copies recipients between the Create activity and all
 	// objects. It then saves the entry in the database.
 	wrapped.Create = func(context.Context, vocab.ActivityStreamsCreate) error {
-		return errors.New("not implemented")
+		log.Println("Create()")
+		return nil
 	}
 
 	// Update handles additional side effects for the Update ActivityStreams
@@ -95,7 +95,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// the stored objects. Any top-level null literals will be deleted on
 	// the stored objects as well.
 	wrapped.Update = func(context.Context, vocab.ActivityStreamsUpdate) error {
-		return errors.New("not implemented")
+		log.Println("Update()")
+		return nil
 	}
 
 	// Delete handles additional side effects for the Delete ActivityStreams
@@ -104,7 +105,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// The wrapping callback replaces the object(s) with tombstones in the
 	// database.
 	wrapped.Delete = func(context.Context, vocab.ActivityStreamsDelete) error {
-		return errors.New("not implemented")
+		log.Println("Delete()")
+		return nil
 	}
 
 	// Follow handles additional side effects for the Follow ActivityStreams
@@ -113,7 +115,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// The wrapping callback only ensures the 'Follow' has at least one
 	// 'object' entry, but otherwise has no default side effect.
 	wrapped.Follow = func(context.Context, vocab.ActivityStreamsFollow) error {
-		return errors.New("not implemented")
+		log.Println("Follow()")
+		return nil
 	}
 
 	// Add handles additional side effects for the Add ActivityStreams
@@ -124,7 +127,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// 'target' collection if the 'target' collection(s) live on this
 	// server.
 	wrapped.Add = func(context.Context, vocab.ActivityStreamsAdd) error {
-		return errors.New("not implemented")
+		log.Println("Add()")
+		return nil
 	}
 
 	// Remove handles additional side effects for the Remove ActivityStreams
@@ -134,7 +138,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// 'target' collection if the 'target' collection(s) live on this
 	// server.
 	wrapped.Remove = func(context.Context, vocab.ActivityStreamsRemove) error {
-		return errors.New("not implemented")
+		log.Println("Remove()")
+		return nil
 	}
 
 	// Like handles additional side effects for the Like ActivityStreams
@@ -143,7 +148,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// The wrapping function will add the objects on the activity to the
 	// "liked" collection of this actor.
 	wrapped.Like = func(context.Context, vocab.ActivityStreamsLike) error {
-		return errors.New("not implemented")
+		log.Println("Like()")
+		return nil
 	}
 
 	// Undo handles additional side effects for the Undo ActivityStreams
@@ -158,7 +164,8 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// It is expected that the application will implement the proper
 	// reversal of activities that are being undone.
 	wrapped.Undo = func(context.Context, vocab.ActivityStreamsUndo) error {
-		return errors.New("not implemented")
+		log.Println("Undo()")
+		return nil
 	}
 
 	// Block handles additional side effects for the Block ActivityStreams
@@ -172,10 +179,11 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 	// Note that go-fed does not federate 'Block' activities received in the
 	// Social Protocol.
 	wrapped.Block = func(context.Context, vocab.ActivityStreamsBlock) error {
-		return errors.New("not implemented")
+		log.Println("Block()")
+		return nil
 	}
 
-	return wrapped, nil, errors.New("not implemented")
+	return wrapped, nil, nil
 }
 
 // DefaultCallback is called for types that go-fed can deserialize but
@@ -187,5 +195,5 @@ func (f *FedSocialProtocol) Callbacks(c context.Context) (wrapped pub.SocialWrap
 // DefaultCallback.
 func (f *FedSocialProtocol) DefaultCallback(c context.Context, activity pub.Activity) error {
 	log.Println("DefaultCallback()")
-	return errors.New("not implemented")
+	return nil
 }
