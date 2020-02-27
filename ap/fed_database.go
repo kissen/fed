@@ -81,8 +81,11 @@ func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.Acti
 
 	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
+	} else if page, err := collectPage(c, user.Inbox); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		return collectPage(c, user.Inbox)
+		help.SetIdOn(page, iri.URL())
+		return page, nil
 	}
 }
 
@@ -288,8 +291,11 @@ func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vo
 
 	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, errors.Wrap(err, "no such outbox")
+	} else if page, err := collectPage(c, user.Outbox); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		return collectPage(c, user.Outbox)
+		help.SetIdOn(page, iri.URL())
+		return page, nil
 	}
 }
 
@@ -339,8 +345,11 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 
 	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
+	} else if set, err := collectSet(c, user.Followers); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		return collectSet(c, user.Followers)
+		help.SetIdOn(set, iri.URL())
+		return set, nil
 	}
 }
 
@@ -357,8 +366,11 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 
 	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
+	} else if set, err := collectSet(c, user.Following); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		return collectSet(c, user.Following)
+		help.SetIdOn(set, iri.URL())
+		return set, nil
 	}
 }
 
@@ -375,8 +387,11 @@ func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers voc
 
 	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
+	} else if set, err := collectSet(c, user.Liked); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		return collectSet(c, user.Liked)
+		help.SetIdOn(set, iri.URL())
+		return set, nil
 	}
 }
 
@@ -394,10 +409,7 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 	// build up the actor object
 
 	actor = streams.NewActivityStreamsPerson()
-
-	id := streams.NewJSONLDIdProperty()
-	id.SetIRI(iri.URL())
-	actor.SetJSONLDId(id)
+	help.SetIdOn(actor, iri.URL())
 
 	name := streams.NewActivityStreamsNameProperty()
 	name.AppendXMLSchemaString(user.Name)

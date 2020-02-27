@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
+	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/help"
 	"log"
 	"net/http"
 	"net/url"
@@ -85,8 +87,11 @@ func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab
 
 	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
+	} else if page, err := collectPage(c, user.Outbox); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		return collectPage(c, user.Outbox)
+		help.SetIdOn(page, iri.URL())
+		return page, nil
 	}
 }
 
