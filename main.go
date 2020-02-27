@@ -11,6 +11,33 @@ import (
 	"path/filepath"
 )
 
+func openDatabase() db.FedStorage {
+	// open db
+
+	dbPath := filepath.Join(os.TempDir(), "main.db")
+
+	storage := &db.FedEmbeddedStorage{
+		Filepath: dbPath,
+	}
+
+	storage.Open()
+
+	// add some users
+
+	usernames := []string{
+		"alice", "bob", "celia", "daniel", "emily", "frank",
+	}
+
+	for _, username := range usernames {
+		user := &db.FedUser{Name: username}
+		Must(storage.StoreUser(user))
+	}
+
+	// done
+
+	return storage
+}
+
 func listenAndAccept(storage db.FedStorage) {
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -44,22 +71,10 @@ func listenAndAccept(storage db.FedStorage) {
 }
 
 func main() {
-	// configure logging
-
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	// set up database
-
-	dbPath := filepath.Join(os.TempDir(), "main.db")
-
-	storage := &db.FedEmbeddedStorage{
-		Filepath: dbPath,
-	}
-
-	storage.Open()
+	storage := openDatabase()
 	defer storage.Close()
-
-	// start http server
 
 	listenAndAccept(storage)
 }

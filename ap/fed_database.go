@@ -2,7 +2,7 @@ package ap
 
 import (
 	"context"
-	"fmt"
+	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/db"
@@ -217,9 +217,8 @@ func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, e
 
 	// try out actors
 
-	if actor, err := iri.Actor(); err != nil {
-		// TODO
-		return nil, fmt.Errorf("getting actor=%v not yet implemented", actor)
+	if _, err := iri.Actor(); err != nil {
+		return f.getActor(c, iri.URL())
 	}
 
 	// try serving plain documents
@@ -379,6 +378,52 @@ func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers voc
 	} else {
 		return collectSet(c, user.Liked)
 	}
+}
+
+func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor vocab.ActivityStreamsPerson, err error) {
+	// look up the user
+
+	var user *db.FedUser
+
+	iri := IRI{c, actorIRI}
+
+	if user, err = iri.RetrieveOwner(); err != nil {
+		return nil, errors.Wrap(err, "not an actor")
+	}
+
+	// build up the actor object
+
+	actor = streams.NewActivityStreamsPerson()
+
+	id := streams.NewJSONLDIdProperty()
+	id.SetIRI(iri.URL())
+	actor.SetJSONLDId(id)
+
+	name := streams.NewActivityStreamsNameProperty()
+	name.AppendXMLSchemaString(user.Name)
+	actor.SetActivityStreamsName(name)
+
+	inbox := streams.NewActivityStreamsInboxProperty()
+	inbox.SetIRI(InboxIRI(c, user.Name).URL())
+	actor.SetActivityStreamsInbox(inbox)
+
+	outbox := streams.NewActivityStreamsOutboxProperty()
+	outbox.SetIRI(OutboxIRI(c, user.Name).URL())
+	actor.SetActivityStreamsOutbox(outbox)
+
+	followers := streams.NewActivityStreamsFollowersProperty()
+	followers.SetIRI(FollowersIRI(c, user.Name).URL())
+	actor.SetActivityStreamsFollowers(followers)
+
+	following := streams.NewActivityStreamsFollowingProperty()
+	following.SetIRI(FollowingIRI(c, user.Name).URL())
+	actor.SetActivityStreamsFollowing(following)
+
+	liked := streams.NewActivityStreamsLikedProperty()
+	liked.SetIRI(LikedIRI(c, user.Name).URL())
+	actor.SetActivityStreamsLiked(liked)
+
+	return actor, nil
 }
 
 // Ensure that all objects in collection are part of our storage. Returns a
