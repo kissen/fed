@@ -7,6 +7,8 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 func listenAndAccept(storage db.FedStorage) {
@@ -48,8 +50,10 @@ func main() {
 
 	// set up database
 
+	dbPath := filepath.Join(os.TempDir(), "main.db")
+
 	storage := &db.FedEmbeddedStorage{
-		Filepath: "/tmp/fed.bbolt",
+		Filepath: dbPath,
 	}
 
 	storage.Open()

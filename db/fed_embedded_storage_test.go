@@ -11,13 +11,8 @@ import (
 )
 
 func dbPath(t *testing.T) string {
-	cachedir, err := os.UserCacheDir()
-
-	if err != nil {
-		t.Fatalf("cannot determine cache directory err=%v", err)
-	}
-
-	return filepath.Join(cachedir, "fed.db")
+	dir := os.TempDir()
+	return filepath.Join(dir, "fed_embedded_storage_test.db")
 }
 
 func deleteDbPath(t *testing.T) {

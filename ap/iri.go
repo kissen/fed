@@ -2,10 +2,10 @@ package ap
 
 import (
 	"context"
-	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/db"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"net/url"
 	"path"
 	"strings"

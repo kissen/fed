@@ -20,7 +20,7 @@ type FedUser struct {
 // Return a slice that contains all collections (i.e. Inbox, Outbox,
 // Following, Followers and Liked).
 func (u *FedUser) Collections() [][]*url.URL {
-	return [][]*url.URL {
+	return [][]*url.URL{
 		u.Inbox, u.Outbox, u.Following, u.Followers, u.Liked,
 	}
 }
