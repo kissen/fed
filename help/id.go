@@ -6,9 +6,9 @@ import (
 )
 
 func Id(object vocab.Type) *url.URL {
-	property := object.GetJSONLDId()
-
-	if property.IsIRI() {
+	if object == nil {
+		panic("argument is nil")
+	} else if property := object.GetJSONLDId(); property.IsIRI() {
 		return property.GetIRI()
 	} else if property.IsXMLSchemaAnyURI() {
 		return property.Get()
