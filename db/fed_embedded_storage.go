@@ -57,7 +57,7 @@ func (fs *FedEmbeddedStorage) Close() error {
 }
 
 func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err error) {
-	log.Println("RetrieveUser()")
+	log.Printf("RetrieveUser(%s)", username)
 
 	bucketKey := []byte(_USERS_BUCKET)
 	userKey := []byte(username)
@@ -90,7 +90,7 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 }
 
 func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
-	log.Println("StoreUser()")
+	log.Printf("StoreUser(%v)", user.Name)
 
 	bucketKey := []byte(_USERS_BUCKET)
 	userKey := []byte(user.Name)
@@ -117,7 +117,7 @@ func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
 }
 
 func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err error) {
-	log.Println("RetrieveObject()")
+	log.Printf("RetrieveObject(%v)", iri)
 
 	bucketKey := []byte(_DOCUMENTS_BUCKET)
 	documentKey := []byte(normalizeIri(iri))
@@ -150,7 +150,7 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 }
 
 func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
-	log.Println("StoreObject()")
+	log.Printf("StoreObject(%v)", iri)
 
 	bucketKey := []byte(_DOCUMENTS_BUCKET)
 	documentKey := []byte(normalizeIri(iri))
@@ -177,7 +177,7 @@ func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 }
 
 func (fs *FedEmbeddedStorage) DeleteObject(iri *url.URL) error {
-	log.Println("DeleteObject()")
+	log.Printf("DeleteObject(%v)", iri)
 
 	bucketKey := []byte(_DOCUMENTS_BUCKET)
 	documentKey := []byte(normalizeIri(iri))
