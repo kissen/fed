@@ -444,15 +444,21 @@ func (f *FedDatabase) addToStorage(c context.Context, collection vocab.ActivityS
 	items := collection.GetActivityStreamsOrderedItems()
 	var result []*url.URL
 
-	for it := items.Begin(); it != nil; it = it.Next() {
-		obj := it.GetActivityStreamsObject()
-		id := help.Id(obj)
-
-		if err := FromContext(c).Storage.StoreObject(id, obj); err != nil {
-			return nil, errors.Wrap(err, "at least one entry was not understood")
+	for it := items.Begin(); it != items.End(); it = it.Next() {
+		if it.IsIRI() {
+			// IRIs do not need to be stored here; skip them
+			continue
 		}
 
-		result = append(result, id)
+		// TODO: continue here
+
+		if obj := it.GetType(); obj == nil {
+			panic("obj is nil")
+		} else if err := FromContext(c).Storage.StoreObject(help.Id(obj), obj); err != nil {
+			return nil, errors.Wrap(err, "at least one entry was not understood")
+		} else {
+			result = append(result, help.Id(obj))
+		}
 	}
 
 	return result, nil
