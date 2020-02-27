@@ -210,17 +210,17 @@ func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, e
 
 	// try out collections
 
-	if _, err := iri.InboxOwner(); err != nil {
+	if _, err := iri.InboxOwner(); err == nil {
 		return f.GetInbox(c, iri.URL())
 	}
 
-	if _, err := iri.OutboxOwner(); err != nil {
+	if _, err := iri.OutboxOwner(); err == nil {
 		return f.GetOutbox(c, iri.URL())
 	}
 
 	// try out actors
 
-	if _, err := iri.Actor(); err != nil {
+	if _, err := iri.Actor(); err == nil {
 		return f.getActor(c, iri.URL())
 	}
 
