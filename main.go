@@ -57,9 +57,13 @@ func listenAndAccept(storage db.FedStorage) {
 		database, clock,
 	)
 
-	r.HandleFunc("/ap/inbox/{username:[A-Za-z]+}", newInboxHandler(actor, storage)).Methods("GET", "POST")
-	r.HandleFunc("/ap/outbox/{username:[A-Za-z]+}", newOutboxHandler(actor, storage)).Methods("GET", "POST")
-	r.HandleFunc("/ap/activity/{id:[0-9]+}", newActivityHandler(handler, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/{username:[A-Za-z]+}`, newActivityHandler(handler, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/{username:[A-Za-z]+}/inbox`, newInboxHandler(actor, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/{username:[A-Za-z]+}/outbox`, newOutboxHandler(actor, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/{username:[A-Za-z]+}/followers`, newActivityHandler(handler, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/{username:[A-Za-z]+}/following`, newActivityHandler(handler, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/{username:[A-Za-z]+}/liked`, newActivityHandler(handler, storage)).Methods("GET", "POST")
+	r.HandleFunc(`/ap/storage/{id:[A-Za-z0-9\-]}`, newActivityHandler(handler, storage)).Methods("GET", "POST")
 
 	// Let's rock!
 
