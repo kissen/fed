@@ -29,7 +29,7 @@ func (f *FedTransport) Dereference(c context.Context, iri *url.URL) ([]byte, err
 	} else if bytes, err := f.dereferenceFromRemote(c, iri); err == nil {
 		return bytes, nil
 	} else {
-		return nil, fmt.Errorf("cannot dereference iri=%v")
+		return nil, fmt.Errorf("cannot dereference iri=%v", iri)
 	}
 }
 
