@@ -29,7 +29,7 @@ func (f *FedTransport) Dereference(c context.Context, iri *url.URL) ([]byte, err
 	} else if bytes, err := f.dereferenceFromRemote(c, iri); err == nil {
 		return bytes, nil
 	} else {
-		return nil, fmt.Errorf("cannot dereference iri=%v", iri)
+		return nil, errors.Wrap(err, "cannot dereference")
 	}
 }
 
@@ -46,7 +46,7 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) error {
 	resp, err := http.Post(to.String(), "application/ld+json", bytes.NewBuffer(copy))
 
 	if err != nil {
-		return errors.Wrapf(err, "POST to=%v failed", to)
+		return err
 	}
 
 	defer resp.Body.Close()
@@ -91,7 +91,7 @@ func (f *FedTransport) dereferenceFromRemote(c context.Context, iri *url.URL) ([
 	resp, err := http.Get(iri.String())
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "GET to iri=%v failed", iri)
+		return nil, err
 	}
 
 	defer resp.Body.Close()
