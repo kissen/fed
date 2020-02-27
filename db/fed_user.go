@@ -17,6 +17,14 @@ type FedUser struct {
 	Liked     []*url.URL
 }
 
+// Return a slice that contains all collections (i.e. Inbox, Outbox,
+// Following, Followers and Liked).
+func (u *FedUser) Collections() [][]*url.URL {
+	return [][]*url.URL {
+		u.Inbox, u.Outbox, u.Following, u.Followers, u.Liked,
+	}
+}
+
 func userToBytes(user *FedUser) ([]byte, error) {
 	if bytes, err := json.Marshal(user); err != nil {
 		return nil, errors.Wrap(err, "byte marshal from user failed")

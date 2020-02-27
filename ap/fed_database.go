@@ -53,10 +53,12 @@ func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
 func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (contains bool, err error) {
 	log.Printf("InboxContains(inbox=%v id=%v)\n", inbox, id)
 
+	iri := IRI{c, id}
+
 	var user *db.FedUser
 
-	if user, err = parseUserFrom(c, parseInboxOwnerFromIri, inbox); err != nil {
-		return false, errors.Wrap(err, "no such inbox")
+	if user, err = iri.RetrieveOwner(); err != nil {
+		return false, err
 	}
 
 	for _, member := range user.Inbox {
@@ -75,8 +77,10 @@ func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (cont
 func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Printf("GetInbox(%v)\n", inboxIRI)
 
-	if user, err := parseUserFrom(c, parseInboxOwnerFromIri, inboxIRI); err != nil {
-		return nil, errors.Wrap(err, "no such inbox")
+	iri := IRI{c, inboxIRI}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
+		return nil, err
 	} else {
 		return collectPage(c, user.Inbox)
 	}
@@ -90,8 +94,11 @@ func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.Acti
 func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrderedCollectionPage) error {
 	log.Println("SetInbox()")
 
-	if user, err := parseUserFrom(c, parseInboxOwnerFromIri, help.Id(inbox)); err != nil {
-		return errors.Wrap(err, "unknown user")
+	id := help.Id(inbox)
+	iri := IRI{c, id}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
+		return err
 	} else if slice, err := f.addToStorage(c, inbox); err != nil {
 		return err
 	} else {
@@ -107,17 +114,23 @@ func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrd
 func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error) {
 	log.Println("Owns()")
 
-	if f.ownsInbox(c, id) {
+	// first, check if it is an retrievable object
+
+	if _, err := FromContext(c).Storage.RetrieveObject(id); err == nil {
 		return true, nil
 	}
 
-	if f.ownsOutbox(c, id) {
-		return true, nil
+	// it isn't; check if it's a users collection
+
+	iri := IRI{c, id}
+
+	if user, err := iri.RetrieveOwner(); err == nil {
+		if urlInAny(id, user.Collections()) {
+			return true, nil
+		}
 	}
 
-	if f.ownsActivity(c, id) {
-		return true, nil
-	}
+	// not owned by us
 
 	return false, nil
 }
@@ -128,7 +141,9 @@ func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error
 func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (actorIRI *url.URL, err error) {
 	log.Printf("ActorForOutbox(%v)\n", outboxIRI)
 
-	if username, err := parseOutboxOwnerFromIri(c, outboxIRI); err != nil {
+	iri := IRI{c, outboxIRI}
+
+	if username, err := iri.OutboxOwner(); err != nil {
 		return nil, err
 	} else {
 		return constructActorIri(c, username), nil
@@ -141,7 +156,9 @@ func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (act
 func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actorIRI *url.URL, err error) {
 	log.Printf("ActorForInbox(%v)\n", inboxIRI)
 
-	if username, err := parseInboxOwnerFromIri(c, inboxIRI); err != nil {
+	iri := IRI{c, inboxIRI}
+
+	if username, err := iri.InboxOwner(); err != nil {
 		return nil, err
 	} else {
 		return constructActorIri(c, username), nil
@@ -155,7 +172,9 @@ func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actor
 func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outboxIRI *url.URL, err error) {
 	log.Printf("OutboxForInbox(%v)\n", outboxIRI)
 
-	if username, err := parseInboxOwnerFromIri(c, inboxIRI); err != nil {
+	iri := IRI{c, inboxIRI}
+
+	if username, err := iri.InboxOwner(); err != nil {
 		return nil, err
 	} else {
 		return constructOutboxIri(c, username), nil
@@ -181,30 +200,32 @@ func (f *FedDatabase) Exists(c context.Context, id *url.URL) (exists bool, err e
 // Get returns the database entry for the specified id.
 //
 // The library makes this call only after acquiring a lock first.
-func (f *FedDatabase) Get(c context.Context, iri *url.URL) (value vocab.Type, err error) {
-	log.Printf("Get(%v)\n", iri)
+func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, err error) {
+	log.Printf("Get(%v)\n", addr)
+
+	iri := IRI{c, addr}
 
 	// try out collections
 
-	if _, err := parseInboxOwnerFromIri(c, iri); err == nil {
-		return f.GetInbox(c, iri)
+	if _, err := iri.InboxOwner(); err != nil {
+		return f.GetInbox(c, iri.URL())
 	}
 
-	if _, err := parseOutboxOwnerFromIri(c, iri); err == nil {
-		return f.GetOutbox(c, iri)
+	if _, err := iri.OutboxOwner(); err != nil {
+		return f.GetOutbox(c, iri.URL())
 	}
 
 	// try out actors
 
-	if actor, err := parseActorFromIri(c, iri); err == nil {
+	if actor, err := iri.Actor(); err != nil {
 		// TODO
 		return nil, fmt.Errorf("getting actor=%v not yet implemented", actor)
 	}
 
 	// try serving plain documents
 
-	if obj, err := FromContext(c).Storage.RetrieveObject(iri); err != nil {
-		return nil, errors.Wrapf(err, "could not fetch iri=%v from storage", iri)
+	if obj, err := FromContext(c).Storage.RetrieveObject(iri.URL()); err != nil {
+		return nil, errors.Wrapf(err, "cannot retrieve addr=%v", iri)
 	} else {
 		return obj, nil
 	}
@@ -264,7 +285,9 @@ func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
 func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
 	log.Printf("GetOutbox(%v)\n", outboxIRI)
 
-	if user, err := parseUserFrom(c, parseOutboxOwnerFromIri, outboxIRI); err != nil {
+	iri := IRI{c, outboxIRI}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, errors.Wrap(err, "no such outbox")
 	} else {
 		return collectPage(c, user.Outbox)
@@ -279,8 +302,11 @@ func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vo
 func (f *FedDatabase) SetOutbox(c context.Context, outbox vocab.ActivityStreamsOrderedCollectionPage) error {
 	log.Println("SetOutbox()")
 
-	if user, err := parseUserFrom(c, parseInboxOwnerFromIri, help.Id(outbox)); err != nil {
-		return errors.Wrap(err, "unknown user")
+	id := help.Id(outbox)
+	iri := IRI{c, id}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
+		return err
 	} else if slice, err := f.addToStorage(c, outbox); err != nil {
 		return err
 	} else {
@@ -298,7 +324,7 @@ func (f *FedDatabase) SetOutbox(c context.Context, outbox vocab.ActivityStreamsO
 func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err error) {
 	log.Println("NewId()")
 
-	return rollObjectIri(c), nil
+	return RollObjectIRI(c).URL(), nil
 }
 
 // Followers obtains the Followers Collection for an actor with the
@@ -310,7 +336,9 @@ func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err e
 func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Followers(%v)", actorIRI)
 
-	if user, err := parseUserFrom(c, parseActorFromIri, actorIRI); err != nil {
+	iri := IRI{c, actorIRI}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
 	} else {
 		return collectSet(c, user.Followers)
@@ -326,7 +354,9 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Following(%v)", actorIRI)
 
-	if user, err := parseUserFrom(c, parseActorFromIri, actorIRI); err != nil {
+	iri := IRI{c, actorIRI}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
 	} else {
 		return collectSet(c, user.Following)
@@ -342,26 +372,13 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Liked(%v)", actorIRI)
 
-	if user, err := parseUserFrom(c, parseActorFromIri, actorIRI); err != nil {
+	iri := IRI{c, actorIRI}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
 		return nil, err
 	} else {
 		return collectSet(c, user.Liked)
 	}
-}
-
-func (f *FedDatabase) ownsInbox(c context.Context, iri *url.URL) bool {
-	_, err := parseUserFrom(c, parseInboxOwnerFromIri, iri)
-	return err != nil
-}
-
-func (f *FedDatabase) ownsOutbox(c context.Context, iri *url.URL) bool {
-	_, err := parseUserFrom(c, parseOutboxOwnerFromIri, iri)
-	return err != nil
-}
-
-func (f *FedDatabase) ownsActivity(c context.Context, iri *url.URL) bool {
-	_, err := FromContext(c).Storage.RetrieveObject(iri)
-	return err != nil
 }
 
 // Ensure that all objects in collection are part of our storage. Returns a

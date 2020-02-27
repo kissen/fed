@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
-	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -82,8 +81,10 @@ func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.Resp
 func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Println("GetOutbox()")
 
-	if user, err := parseUserFrom(c, parseOutboxOwnerFromIri, r.URL); err != nil {
-		return nil, errors.Wrap(err, "no such outbox")
+	iri := IRI{c, r.URL}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
+		return nil, err
 	} else {
 		return collectPage(c, user.Outbox)
 	}

@@ -2,6 +2,8 @@ package ap
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"fmt"
 	"github.com/google/uuid"
 	"net/url"
@@ -44,6 +46,21 @@ func InboxIRI(c context.Context, owner string) IRI {
 // Generate a new outbox IRI.
 func OutboxIRI(c context.Context, owner string) IRI {
 	return NewIRI(c, owner, "outbox")
+}
+
+// Generate a new followers IRI.
+func FollowersIRI(c context.Context, owner string) IRI {
+	return NewIRI(c, owner, "followers")
+}
+
+// Generate a new following IRI.
+func FollowingIRI(c context.Context, owner string) IRI {
+	return NewIRI(c, owner, "following")
+}
+
+// Generate a new liked IRI.
+func LikedIRI(c context.Context, owner string) IRI {
+	return NewIRI(c, owner, "liked")
 }
 
 // Generate a new object IRI with a random UUID used as an object id.
@@ -112,6 +129,21 @@ func (iri IRI) Object() (string, error) {
 		return "", fmt.Errorf("Target=%v not an object", iri.Target)
 	} else {
 		return *id, nil
+	}
+}
+
+// Return the owner (username) of this IRI.
+func (iri IRI) RetrieveOwner() (*db.FedUser, error) {
+	// the owner of an IRI, in the easy case, is the first
+	// path component; we do not support getting the owner
+	// of object IRIs yet
+
+	if username, _, err := iri.split(); err != nil {
+		return nil, err
+	} else if *username == "storage" {
+		return nil, errors.New("reserved username")
+	} else {
+		return FromContext(iri.Context).Storage.RetrieveUser(*username)
 	}
 }
 
