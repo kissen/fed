@@ -146,7 +146,7 @@ func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (act
 	if username, err := iri.OutboxOwner(); err != nil {
 		return nil, err
 	} else {
-		return constructActorIri(c, username), nil
+		return ActorIRI(c, username).URL(), nil
 	}
 }
 
@@ -161,7 +161,7 @@ func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actor
 	if username, err := iri.InboxOwner(); err != nil {
 		return nil, err
 	} else {
-		return constructActorIri(c, username), nil
+		return ActorIRI(c, username).URL(), nil
 	}
 }
 
@@ -177,7 +177,7 @@ func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outb
 	if username, err := iri.InboxOwner(); err != nil {
 		return nil, err
 	} else {
-		return constructOutboxIri(c, username), nil
+		return InboxIRI(c, username).URL(), nil
 	}
 }
 
