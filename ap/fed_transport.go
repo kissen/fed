@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// The content type to use for PUT (Content Type) and GET (Accept)
+// The content type to use for POST (Content Type) and GET (Accept)
 const _CONTENT_TYPE = `application/ld+json; profile="https://www.w3.org/ns/activitystreams"`
 
 // Timeout for our HTTP requests. I guess eventually we will implement
@@ -171,11 +171,12 @@ func (f *FedTransport) client() *http.Client {
 	return f.cachedClient
 }
 
+// Set Content-Type/Accept and User-Agent headers on req.
 func (f *FedTransport) setHeaders(req *http.Request) {
 	switch req.Method {
 	case "GET":
 		req.Header.Set("Accept", _CONTENT_TYPE)
-	case "PUT":
+	case "POST":
 		req.Header.Set("Content-Type", _CONTENT_TYPE)
 	}
 
