@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/db"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -60,7 +60,7 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) (err er
 
 	var req *http.Request
 
-	if req, err = http.NewRequest("PUT", to.String(), body); err != nil {
+	if req, err = http.NewRequest("POST", to.String(), body); err != nil {
 		return errors.Wrap(err, "cannot set up request")
 	}
 
@@ -71,7 +71,7 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) (err er
 	var resp *http.Response
 
 	if resp, err = f.client().Do(req); err != nil {
-		return errors.Wrap(err, "cannot do request")
+		return errors.Wrap(err, "POST")
 	}
 
 	defer resp.Body.Close()
@@ -110,13 +110,23 @@ func (f *FedTransport) dereferenceFromStorage(c context.Context, iri *url.URL) (
 	}
 }
 
-func (f *FedTransport) dereferenceFromRemote(c context.Context, iri *url.URL) ([]byte, error) {
-	// GET the object
+func (f *FedTransport) dereferenceFromRemote(c context.Context, iri *url.URL) (body []byte, err error) {
+	// build up the request
 
-	resp, err := http.Get(iri.String())
+	var req *http.Request
 
-	if err != nil {
-		return nil, err
+	if req, err = http.NewRequest("GET", iri.String(), nil); err != nil {
+		return nil, errors.Wrap(err, "cannot set up request")
+	}
+
+	req.Header.Set("Accept", _CONTENT_TYPE)
+
+	// GET to the address
+
+	var resp *http.Response
+
+	if resp, err = f.client().Do(req); err != nil {
+		return nil, errors.Wrap(err, "GET")
 	}
 
 	defer resp.Body.Close()
@@ -127,14 +137,9 @@ func (f *FedTransport) dereferenceFromRemote(c context.Context, iri *url.URL) ([
 		return nil, fmt.Errorf("iri=%v replied status=%v", iri, resp.Status)
 	}
 
-	// read into buffer
+	// return the body
 
-	buf := &bytes.Buffer{}
-	io.Copy(buf, resp.Body)
-
-	// put into byte slice
-
-	return buf.Bytes(), nil
+	return ioutil.ReadAll(resp.Body)
 }
 
 // Return a copy of src.
