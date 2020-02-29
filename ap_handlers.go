@@ -17,7 +17,7 @@ func baseContext(store db.FedStorage) context.Context {
 	fc := ap.FromContext(ctx)
 
 	fc.Scheme = ap.Just("http")
-	fc.Host = ap.Just("localhost")
+	fc.Host = ap.Just("localhost:9999")
 	fc.BasePath = ap.Just("/ap/")
 
 	fc.Storage = store
