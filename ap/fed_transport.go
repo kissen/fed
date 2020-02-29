@@ -25,7 +25,7 @@ const _HTTP_TIMEOUT = 8 * time.Second
 type FedTransport struct {
 	Context   context.Context
 	Target    *url.URL // TODO: use for authentication
-	UserAgent string   // TODO: use in http requests
+	UserAgent string
 
 	// http client used for http requests; use client() to get a usable
 	// client
@@ -65,6 +65,7 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) (err er
 	}
 
 	req.Header.Set("Content-Type", _CONTENT_TYPE)
+	req.Header.Set("User-Agent", f.UserAgent)
 
 	// POST to the address
 
@@ -120,6 +121,7 @@ func (f *FedTransport) dereferenceFromRemote(c context.Context, iri *url.URL) (b
 	}
 
 	req.Header.Set("Accept", _CONTENT_TYPE)
+	req.Header.Set("User-Agent", f.UserAgent)
 
 	// GET to the address
 
@@ -160,6 +162,10 @@ func (f *FedTransport) client() *http.Client {
 
 	if f.cachedClient == nil {
 		f.cachedClient = &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				req.Header.Set("User-Agent", f.UserAgent)
+				return nil
+			},
 			Timeout: _HTTP_TIMEOUT,
 		}
 	}
