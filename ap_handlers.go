@@ -2,12 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/go-fed/activity/pub"
 	"gitlab.cs.fau.de/kissen/fed/ap"
 	"gitlab.cs.fau.de/kissen/fed/db"
-	"io"
 	"log"
 	"net/http"
 )
@@ -25,18 +22,6 @@ func baseContext(store db.FedStorage) context.Context {
 	return ctx
 }
 
-// Write out the error to an HTTP connection
-func replyWithError(w http.ResponseWriter, statusCode int, cause error) {
-	w.WriteHeader(statusCode)
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-
-	statusStr := http.StatusText(statusCode)
-	errStr := cause.Error()
-	content := fmt.Sprintf("%d %s: %s\n", statusCode, statusStr, errStr)
-
-	io.WriteString(w, content)
-}
-
 // Handlers adapted from tutorial on https://go-fed.org/tutorial#ActivityStreams-Types-and-Properties
 
 func newOutboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
@@ -48,7 +33,7 @@ func newOutboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 
 		// try POST w/ Activity Pub
 		if handled, err := actor.PostOutbox(c, w, r); err != nil {
-			replyWithError(w, http.StatusInternalServerError, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if handled {
 			return
@@ -56,7 +41,7 @@ func newOutboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 
 		// try GET w/ Activity Pub
 		if handled, err := actor.GetOutbox(c, w, r); err != nil {
-			replyWithError(w, http.StatusInternalServerError, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if handled {
 			return
@@ -64,7 +49,11 @@ func newOutboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 
 		// handle non-ActivityPub request, such as responding with a HTML
 		// representation with correct view permissions.
-		replyWithError(w, http.StatusNotImplemented, errors.New("only ActivityPub may get the outbox"))
+		http.Error(
+			w,
+			"not acceptable; check https://www.w3.org/TR/activitypub/#retrieving-objects",
+			http.StatusNotAcceptable,
+		)
 	}
 }
 
@@ -77,7 +66,7 @@ func newInboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 
 		// try POST
 		if handled, err := actor.PostInbox(c, w, r); err != nil {
-			replyWithError(w, http.StatusInternalServerError, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if handled {
 			return
@@ -85,7 +74,7 @@ func newInboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 
 		// try GET
 		if handled, err := actor.GetInbox(c, w, r); err != nil {
-			replyWithError(w, http.StatusInternalServerError, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if handled {
 			return
@@ -93,7 +82,11 @@ func newInboxHandler(actor pub.Actor, store db.FedStorage) http.HandlerFunc {
 
 		// handle non-ActivityPub request, such as responding with a HTML
 		// representation with correct view permissions.
-		replyWithError(w, http.StatusNotImplemented, errors.New("only ActivityPub may get the inbox"))
+		http.Error(
+			w,
+			"not acceptable; check https://www.w3.org/TR/activitypub/#retrieving-objects",
+			http.StatusNotAcceptable,
+		)
 	}
 }
 
@@ -106,7 +99,7 @@ func newActivityHandler(handler pub.HandlerFunc, store db.FedStorage) http.Handl
 
 		// or myCustomVerifiedPubHandler
 		if handled, err := handler(c, w, r); err != nil {
-			replyWithError(w, http.StatusInternalServerError, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if handled {
 			return
@@ -114,6 +107,10 @@ func newActivityHandler(handler pub.HandlerFunc, store db.FedStorage) http.Handl
 
 		// handle non-ActivityPub request, such as responding with a HTML
 		// representation with correct view permissions.
-		replyWithError(w, http.StatusNotImplemented, errors.New("only ActivityPub may return activties"))
+		http.Error(
+			w,
+			"not acceptable; check https://www.w3.org/TR/activitypub/#retrieving-objects",
+			http.StatusNotAcceptable,
+		)
 	}
 }
