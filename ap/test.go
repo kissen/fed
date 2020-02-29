@@ -2,6 +2,7 @@ package ap
 
 import (
 	"context"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"net/url"
 	"testing"
 )
@@ -13,6 +14,10 @@ func testSetUpContext() context.Context {
 	FromContext(ctx).Scheme = Just("http")
 	FromContext(ctx).Host = Just("example.com")
 	FromContext(ctx).BasePath = Just("/fed/")
+
+	// empty storage; feel free to overwrite with an actual
+	// implementation
+	FromContext(ctx).Storage = &db.FedEmptyStorage{}
 
 	return ctx
 }

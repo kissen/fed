@@ -38,4 +38,3 @@ func (f *FedEmptyStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 func (f *FedEmptyStorage) DeleteObject(iri *url.URL) error {
 	return nil
 }
-
