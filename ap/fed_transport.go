@@ -64,8 +64,7 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) (err er
 		return errors.Wrap(err, "cannot set up request")
 	}
 
-	req.Header.Set("Content-Type", _CONTENT_TYPE)
-	req.Header.Set("User-Agent", f.UserAgent)
+	f.setHeaders(req)
 
 	// POST to the address
 
@@ -120,8 +119,7 @@ func (f *FedTransport) dereferenceFromRemote(c context.Context, iri *url.URL) (b
 		return nil, errors.Wrap(err, "cannot set up request")
 	}
 
-	req.Header.Set("Accept", _CONTENT_TYPE)
-	req.Header.Set("User-Agent", f.UserAgent)
+	f.setHeaders(req)
 
 	// GET to the address
 
@@ -163,7 +161,7 @@ func (f *FedTransport) client() *http.Client {
 	if f.cachedClient == nil {
 		f.cachedClient = &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				req.Header.Set("User-Agent", f.UserAgent)
+				f.setHeaders(req)
 				return nil
 			},
 			Timeout: _HTTP_TIMEOUT,
@@ -171,4 +169,15 @@ func (f *FedTransport) client() *http.Client {
 	}
 
 	return f.cachedClient
+}
+
+func (f *FedTransport) setHeaders(req *http.Request) {
+	switch req.Method {
+	case "GET":
+		req.Header.Set("Accept", _CONTENT_TYPE)
+	case "PUT":
+		req.Header.Set("Content-Type", _CONTENT_TYPE)
+	}
+
+	req.Header.Set("User-Agent", f.UserAgent)
 }
