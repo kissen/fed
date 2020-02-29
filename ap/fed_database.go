@@ -440,26 +440,29 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 
 // Ensure that all objects in collection are part of our storage. Returns a
 // list of all IRIs of all the objects in collection.
-func (f *FedDatabase) addToStorage(c context.Context, collection vocab.ActivityStreamsOrderedCollectionPage) ([]*url.URL, error) {
+func (f *FedDatabase) addToStorage(c context.Context, collection vocab.ActivityStreamsOrderedCollectionPage) (colIRIs []*url.URL, err error) {
 	items := collection.GetActivityStreamsOrderedItems()
-	var result []*url.URL
 
 	for it := items.Begin(); it != items.End(); it = it.Next() {
 		if it.IsIRI() {
-			// IRIs do not need to be stored here; skip them
-			continue
-		}
-
-		// TODO: continue here
-
-		if obj := it.GetType(); obj == nil {
+			// IRIs are only links and do not need to be stored in our database;
+			// we only have to add it to the results slice s.t. it is recorded
+			// e.g. in a users outbox
+			colIRIs = append(colIRIs, it.GetIRI())
+		} else if obj := it.GetType(); obj == nil {
+			// items that are not IRIs really should be full objects; if they are
+			// not something is probably wrong
 			panic("obj is nil")
 		} else if err := FromContext(c).Storage.StoreObject(help.Id(obj), obj); err != nil {
-			return nil, errors.Wrap(err, "at least one entry was not understood")
+			// XXX: here we quit while having modified the database; maybe need
+			// to think about transaction for the FedStorage interface to easily
+			// roll back such changes
+			return nil, errors.Wrapf(err, "cannot store iri=%v", help.Id(obj))
 		} else {
-			result = append(result, help.Id(obj))
+			// object was successfully added to database
+			colIRIs = append(colIRIs, help.Id(obj))
 		}
 	}
 
-	return result, nil
+	return
 }
