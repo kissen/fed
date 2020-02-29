@@ -51,7 +51,7 @@ func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (contains bool, err error) {
-	log.Printf("InboxContains(inbox=%v id=%v)\n", inbox, id)
+	log.Printf("InboxContains(inbox=%v id=%v)", inbox, id)
 
 	iri := IRI{c, id}
 
@@ -75,7 +75,7 @@ func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (cont
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.ActivityStreamsOrderedCollectionPage, error) {
-	log.Printf("GetInbox(%v)\n", inboxIRI)
+	log.Printf("GetInbox(%v)", inboxIRI)
 
 	iri := IRI{c, inboxIRI}
 
@@ -142,7 +142,7 @@ func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (actorIRI *url.URL, err error) {
-	log.Printf("ActorForOutbox(%v)\n", outboxIRI)
+	log.Printf("ActorForOutbox(%v)", outboxIRI)
 
 	iri := IRI{c, outboxIRI}
 
@@ -157,7 +157,7 @@ func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (act
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actorIRI *url.URL, err error) {
-	log.Printf("ActorForInbox(%v)\n", inboxIRI)
+	log.Printf("ActorForInbox(%v)", inboxIRI)
 
 	iri := IRI{c, inboxIRI}
 
@@ -173,7 +173,7 @@ func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actor
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outboxIRI *url.URL, err error) {
-	log.Printf("OutboxForInbox(%v)\n", outboxIRI)
+	log.Printf("OutboxForInbox(%v)", outboxIRI)
 
 	iri := IRI{c, inboxIRI}
 
@@ -189,7 +189,7 @@ func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outb
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Exists(c context.Context, id *url.URL) (exists bool, err error) {
-	log.Printf("Exists(%v)\n", id)
+	log.Printf("Exists(%v)", id)
 
 	// TODO: custom impl
 
@@ -204,7 +204,7 @@ func (f *FedDatabase) Exists(c context.Context, id *url.URL) (exists bool, err e
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, err error) {
-	log.Printf("Get(%v)\n", addr)
+	log.Printf("Get(%v)", addr)
 
 	iri := IRI{c, addr}
 
@@ -275,7 +275,7 @@ func (f *FedDatabase) Update(c context.Context, asType vocab.Type) error {
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
-	log.Printf("Delete(%v)\n", id)
+	log.Printf("Delete(%v)", id)
 
 	return FromContext(c).Storage.DeleteObject(id)
 }
@@ -285,7 +285,7 @@ func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
-	log.Printf("GetOutbox(%v)\n", outboxIRI)
+	log.Printf("GetOutbox(%v)", outboxIRI)
 
 	iri := IRI{c, outboxIRI}
 

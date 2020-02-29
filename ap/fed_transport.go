@@ -22,7 +22,7 @@ type FedTransport struct {
 // Dereference fetches the ActivityStreams object located at this IRI
 // with a GET request.
 func (f *FedTransport) Dereference(c context.Context, iri *url.URL) ([]byte, error) {
-	log.Printf("Dereference(%v)\n", iri)
+	log.Printf("Dereference(%v)", iri)
 
 	if bytes, err := f.dereferenceFromStorage(c, iri); err == nil {
 		return bytes, nil
@@ -35,7 +35,7 @@ func (f *FedTransport) Dereference(c context.Context, iri *url.URL) ([]byte, err
 
 // Deliver sends an ActivityStreams object.
 func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) error {
-	log.Printf("Deliver(%v)\n", to)
+	log.Printf("Deliver(%v)", to)
 
 	// create a copy of the raw bytes as they will get consumed by us
 
@@ -62,7 +62,7 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) error {
 
 // BatchDeliver sends an ActivityStreams object to multiple recipients.
 func (f *FedTransport) BatchDeliver(c context.Context, b []byte, recipients []*url.URL) error {
-	log.Printf("BatchDeliver(%v)\n", recipients)
+	log.Printf("BatchDeliver(%v)", recipients)
 
 	// XXX: slow and wrong (quits halfway through)
 
