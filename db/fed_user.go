@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"net/url"
 )
@@ -23,6 +24,13 @@ func (u *FedUser) Collections() [][]*url.URL {
 	return [][]*url.URL{
 		u.Inbox, u.Outbox, u.Following, u.Followers, u.Liked,
 	}
+}
+
+func (u *FedUser) String() string {
+	return fmt.Sprintf(
+		"{Name=%v Inbox=%v Outbox=%v Following=%v Followers=%v Liked=%v}",
+		u.Name, u.Inbox, u.Outbox, u.Following, u.Followers, u.Liked,
+	)
 }
 
 func userToBytes(user *FedUser) ([]byte, error) {
