@@ -2,9 +2,10 @@ package ap
 
 import (
 	"context"
-	"errors"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
+	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/help"
 	"log"
 	"net/http"
 	"net/url"
@@ -30,8 +31,8 @@ type FedFederatingProtocol struct{}
 // write a response to the ResponseWriter as is expected that the caller
 // to PostInbox will do so when handling the error.
 func (f *FedFederatingProtocol) PostInboxRequestBodyHook(c context.Context, r *http.Request, activity pub.Activity) (context.Context, error) {
-	log.Println("PostInboxRequestBodyHook()")
-	return nil, errors.New("not implemented")
+	log.Printf("PostInboxRequestBodyHook(%v)", r.URL)
+	return c, nil
 }
 
 // AuthenticatePostInbox delegates the authentication of a POST to an
@@ -51,8 +52,8 @@ func (f *FedFederatingProtocol) PostInboxRequestBodyHook(c context.Context, r *h
 // authenticated must be true and error nil. The request will continue
 // to be processed.
 func (f *FedFederatingProtocol) AuthenticatePostInbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
-	log.Println("AuthenticatePostInbox()")
-	return nil, false, errors.New("not implemented")
+	log.Printf("AuthenticatePostInbox(%v)", r.URL)
+	return c, true, nil
 }
 
 // Blocked should determine whether to permit a set of actors given by
@@ -70,8 +71,8 @@ func (f *FedFederatingProtocol) AuthenticatePostInbox(c context.Context, w http.
 // blocked must be false and error nil. The request will continue
 // to be processed.
 func (f *FedFederatingProtocol) Blocked(c context.Context, actorIRIs []*url.URL) (blocked bool, err error) {
-	log.Println("Blocked()")
-	return false, errors.New("not implemented")
+	log.Printf("Blocked(%v)", actorIRIs)
+	return false, nil
 }
 
 // Callbacks returns the application logic that handles ActivityStreams
@@ -104,7 +105,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	//
 	// Create calls Create for each object in the federated Activity.
 	wrapped.Create = func(context.Context, vocab.ActivityStreamsCreate) error {
-		return errors.New("not implemented")
+		log.Println("Create()")
+		return nil
 	}
 
 	// Update handles additional side effects for the Update ActivityStreams
@@ -116,7 +118,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// Update calls Update on the federated entry from the database, with a
 	// new value.
 	wrapped.Update = func(context.Context, vocab.ActivityStreamsUpdate) error {
-		return errors.New("not implemented")
+		log.Println("Update()")
+		return nil
 	}
 
 	// Delete handles additional side effects for the Delete ActivityStreams
@@ -124,7 +127,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	//
 	// Delete removes the federated entry from the database.
 	wrapped.Delete = func(context.Context, vocab.ActivityStreamsDelete) error {
-		return errors.New("not implemented")
+		log.Println("Delete()")
+		return nil
 	}
 
 	// Follow handles additional side effects for the Follow ActivityStreams
@@ -133,7 +137,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// The wrapping function can have one of several default behaviors,
 	// depending on the value of the OnFollow setting.
 	wrapped.Follow = func(context.Context, vocab.ActivityStreamsFollow) error {
-		return errors.New("not implemented")
+		log.Println("Follow()")
+		return nil
 	}
 
 	// OnFollow determines what action to take for this particular callback
@@ -149,7 +154,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	//
 	// Otherwise, no side effects are done by go-fed.
 	wrapped.Accept = func(context.Context, vocab.ActivityStreamsAccept) error {
-		return errors.New("not implemented")
+		log.Println("Accept()")
+		return nil
 	}
 
 	// Reject handles additional side effects for the Reject ActivityStreams
@@ -160,7 +166,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// forward with adding the 'actor' to the original 'actor's 'following'
 	// collection by the client application.
 	wrapped.Reject = func(context.Context, vocab.ActivityStreamsReject) error {
-		return errors.New("not implemented")
+		log.Println("Reject()")
+		return nil
 	}
 
 	// Add handles additional side effects for the Add ActivityStreams
@@ -170,7 +177,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// 'target' collection if the 'target' collection(s) live on this
 	// server.
 	wrapped.Add = func(context.Context, vocab.ActivityStreamsAdd) error {
-		return errors.New("not implemented")
+		log.Println("Add()")
+		return nil
 	}
 
 	// Remove handles additional side effects for the Remove ActivityStreams
@@ -180,7 +188,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// 'target' collection if the 'target' collection(s) live on this
 	// server.
 	wrapped.Remove = func(context.Context, vocab.ActivityStreamsRemove) error {
-		return errors.New("not implemented")
+		log.Println("Remove()")
+		return nil
 	}
 
 	// Like handles additional side effects for the Like ActivityStreams
@@ -189,7 +198,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// The wrapping function will add the activity to the "likes" collection
 	// on all 'object' targets owned by this server.
 	wrapped.Like = func(context.Context, vocab.ActivityStreamsLike) error {
-		return errors.New("not implemented")
+		log.Println("Like()")
+		return nil
 	}
 
 	// Announce handles additional side effects for the Announce
@@ -198,7 +208,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// The wrapping function will add the activity to the "shares"
 	// collection on all 'object' targets owned by this server.
 	wrapped.Announce = func(context.Context, vocab.ActivityStreamsAnnounce) error {
-		return errors.New("not implemented")
+		log.Println("Announce()")
+		return nil
 	}
 
 	// Undo handles additional side effects for the Undo ActivityStreams
@@ -212,7 +223,8 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// It is expected that the application will implement the proper
 	// reversal of activities that are being undone.
 	wrapped.Undo = func(context.Context, vocab.ActivityStreamsUndo) error {
-		return errors.New("not implemented")
+		log.Println("Undo()")
+		return nil
 	}
 
 	// Block handles additional side effects for the Block ActivityStreams
@@ -223,10 +235,11 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 	// received from a federated peer, as delivering Blocks explicitly
 	// deviates from the original ActivityPub specification.
 	wrapped.Block = func(context.Context, vocab.ActivityStreamsBlock) error {
-		return errors.New("not implemented")
+		log.Println("Block()")
+		return nil
 	}
 
-	return wrapped, nil, errors.New("not implemented")
+	return wrapped, nil, nil
 }
 
 // DefaultCallback is called for types that go-fed can deserialize but
@@ -238,7 +251,7 @@ func (f *FedFederatingProtocol) Callbacks(c context.Context) (wrapped pub.Federa
 // DefaultCallback.
 func (f *FedFederatingProtocol) DefaultCallback(c context.Context, activity pub.Activity) error {
 	log.Println("DefaultCallback()")
-	return errors.New("not implemented")
+	return nil
 }
 
 // MaxInboxForwardingRecursionDepth determines how deep to search within
@@ -269,7 +282,7 @@ func (f *FedFederatingProtocol) MaxDeliveryRecursionDepth(c context.Context) int
 // logic to be used, but the implementation must not modify it.
 func (f *FedFederatingProtocol) FilterForwarding(c context.Context, potentialRecipients []*url.URL, a pub.Activity) (filteredRecipients []*url.URL, err error) {
 	log.Println("FilterForwarding()")
-	return nil, errors.New("not implemented")
+	return nil, nil
 }
 
 // GetInbox returns the OrderedCollection inbox of the actor for this
@@ -281,6 +294,16 @@ func (f *FedFederatingProtocol) FilterForwarding(c context.Context, potentialRec
 // Always called, regardless whether the Federated Protocol or Social
 // API is enabled.
 func (f *FedFederatingProtocol) GetInbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
-	log.Println("GetInbox()")
-	return nil, errors.New("not implemented")
+	log.Printf("GetInbox(%v)", r.URL)
+
+	iri := IRI{c, r.URL}
+
+	if user, err := iri.RetrieveOwner(); err != nil {
+		return nil, err
+	} else if page, err := collectPage(c, user.Inbox); err != nil {
+		return nil, errors.Wrap(err, "collect failed")
+	} else {
+		help.SetIdOn(page, iri.URL())
+		return page, nil
+	}
 }
