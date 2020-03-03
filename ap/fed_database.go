@@ -107,7 +107,7 @@ func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrd
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error) {
-	log.Println("Owns()")
+	log.Printf("Owns(%v)", id)
 
 	// first, check if it is an retrievable object
 

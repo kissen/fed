@@ -79,7 +79,15 @@ func (f *FedTransport) Deliver(c context.Context, b []byte, to *url.URL) (err er
 	// evaluate result
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("to=%v replied status=%v", to, resp.Status)
+		// server replied with error?
+		// XXX: server might use non-200 status code to indicate success
+
+		if body, err := ioutil.ReadAll(resp.Body); err == nil {
+			bs := string(body)
+			return fmt.Errorf(`to=%v returned status="%v" body="%v"`, to, resp.Status, bs)
+		} else {
+			return fmt.Errorf(`to=%v returned status="%v"`, to, resp.Status)
+		}
 	}
 
 	return nil

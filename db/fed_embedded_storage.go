@@ -90,7 +90,7 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 }
 
 func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
-	log.Printf("StoreUser(%v)", user)
+	log.Printf("StoreUser(Name=%v #Inbox=%v #Outbox=%v)", user.Name, len(user.Inbox), len(user.Outbox))
 
 	bucketKey := []byte(_USERS_BUCKET)
 	userKey := []byte(user.Name)
