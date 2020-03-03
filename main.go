@@ -55,13 +55,16 @@ func listenAndAccept(storage db.FedStorage) {
 		database, clock,
 	)
 
-	// build up go-fed objects
+	admin := &ap.FedAdminProtocol{}
+
+	// build up http handlers
 
 	inboxHandler := newInboxHandler(actor, storage)
 	outboxHandler := newOutboxHandler(actor, storage)
 	activityHandler := newActivityHandler(handler, storage)
+	adminHandler := newAdminHandler(admin, storage)
 
-	// set up routes
+	// set up activity pub routes
 
 	router := mux.NewRouter().StrictSlash(false)
 
@@ -78,11 +81,15 @@ func listenAndAccept(storage db.FedStorage) {
 		router.HandleFunc(route, activityHandler).Methods("GET", "POST")
 	}
 
+	// build up admin routes
+
+	router.HandleFunc(`/ap/{username:[A-Za-z]+}`, adminHandler).Methods("PUT")
+
 	// let's rock!
 
 	addr := ":9999"
 
-	log.Printf("Starting on addr=%v...", addr)
+	log.Printf("starting on addr=%v...", addr)
 
 	err := http.ListenAndServe(addr, router)
 	log.Fatal(err)

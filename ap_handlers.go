@@ -114,3 +114,15 @@ func newActivityHandler(handler pub.HandlerFunc, store db.FedStorage) http.Handl
 		)
 	}
 }
+
+func newAdminHandler(admin *ap.FedAdminProtocol, store db.FedStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("AdminHandler(%v)", r.URL)
+
+		// populate c with application specific information here
+		c := baseContext(store)
+
+		// AdminProtocol takes care of everything :)
+		admin.Handle(c, w, r)
+	}
+}
