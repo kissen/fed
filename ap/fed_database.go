@@ -53,21 +53,13 @@ func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
 func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (contains bool, err error) {
 	log.Printf("InboxContains(inbox=%v id=%v)", inbox, id)
 
-	iri := IRI{c, id}
+	inboxIri := IRI{c, inbox}
 
-	var user *db.FedUser
-
-	if user, err = iri.RetrieveOwner(); err != nil {
+	if user, err := inboxIri.RetrieveOwner(); err != nil {
 		return false, err
+	} else {
+		return urlIn(id, user.Inbox), nil
 	}
-
-	for _, member := range user.Inbox {
-		if urlEq(id, member) {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 // GetInbox returns the first ordered collection page of the outbox at
