@@ -9,8 +9,8 @@ import (
 	"net/url"
 )
 
-const _USERS_BUCKET = "Users"
-const _DOCUMENTS_BUCKET = "Documents"
+var _USERS_BUCKET = []byte("Users")
+var _DOCUMENTS_BUCKET = []byte("Documents")
 
 type FedEmbeddedStorage struct {
 	Filepath   string
@@ -59,7 +59,6 @@ func (fs *FedEmbeddedStorage) Close() error {
 func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err error) {
 	log.Printf("RetrieveUser(%s)", username)
 
-	bucketKey := []byte(_USERS_BUCKET)
 	userKey := []byte(username)
 
 	var bytes []byte
@@ -67,7 +66,7 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 	err = fs.connection.View(func(tx *bbolt.Tx) error {
 		var bucket *bbolt.Bucket
 
-		if bucket = tx.Bucket(bucketKey); bucket == nil {
+		if bucket = tx.Bucket(_USERS_BUCKET); bucket == nil {
 			return errors.New("cannot open users bucket")
 		}
 
@@ -92,9 +91,7 @@ func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err 
 func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
 	log.Printf("StoreUser(Name=%v #Inbox=%v #Outbox=%v)", user.Name, len(user.Inbox), len(user.Outbox))
 
-	bucketKey := []byte(_USERS_BUCKET)
 	userKey := []byte(user.Name)
-
 	userValue, err := userToBytes(user)
 	if err != nil {
 		return errors.Wrap(err, "could not serialize user")
@@ -104,7 +101,7 @@ func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
 		var bucket *bbolt.Bucket
 		var updateErr error
 
-		if bucket = tx.Bucket(bucketKey); bucket == nil {
+		if bucket = tx.Bucket(_USERS_BUCKET); bucket == nil {
 			return errors.New("could not open users bucket")
 		}
 
@@ -119,19 +116,16 @@ func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
 func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err error) {
 	log.Printf("RetrieveObject(%v)", iri)
 
-	bucketKey := []byte(_DOCUMENTS_BUCKET)
-	documentKey := []byte(normalizeIri(iri))
-
 	var bytes []byte
 
 	err = fs.connection.View(func(tx *bbolt.Tx) error {
 		var bucket *bbolt.Bucket
 
-		if bucket = tx.Bucket(bucketKey); bucket == nil {
+		if bucket = tx.Bucket(_DOCUMENTS_BUCKET); bucket == nil {
 			return errors.New("could not open documents bucket")
 		}
 
-		if bytes = bucket.Get(documentKey); bytes == nil {
+		if bytes = bucket.Get(fs.toKey(iri)); bytes == nil {
 			return fmt.Errorf("no entry for iri=%v", iri)
 		}
 
@@ -152,9 +146,6 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 	log.Printf("StoreObject(%v)", iri)
 
-	bucketKey := []byte(_DOCUMENTS_BUCKET)
-	documentKey := []byte(normalizeIri(iri))
-
 	documentValue, err := VocabToBytes(obj)
 	if err != nil {
 		return errors.Wrap(err, "could not serialize object")
@@ -164,11 +155,11 @@ func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 		var bucket *bbolt.Bucket
 		var updateErr error
 
-		if bucket = tx.Bucket(bucketKey); bucket == nil {
+		if bucket = tx.Bucket(_DOCUMENTS_BUCKET); bucket == nil {
 			return errors.New("could not open documents bucket")
 		}
 
-		if updateErr = bucket.Put(documentKey, documentValue); updateErr != nil {
+		if updateErr = bucket.Put(fs.toKey(iri), documentValue); updateErr != nil {
 			return errors.Wrap(updateErr, "put into bucket failed")
 		}
 
@@ -179,21 +170,28 @@ func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 func (fs *FedEmbeddedStorage) DeleteObject(iri *url.URL) error {
 	log.Printf("DeleteObject(%v)", iri)
 
-	bucketKey := []byte(_DOCUMENTS_BUCKET)
-	documentKey := []byte(normalizeIri(iri))
-
 	return fs.connection.Update(func(tx *bbolt.Tx) error {
 		var bucket *bbolt.Bucket
 		var updateErr error
 
-		if bucket = tx.Bucket(bucketKey); bucket == nil {
+		if bucket = tx.Bucket(_DOCUMENTS_BUCKET); bucket == nil {
 			return errors.New("could not open documents bucket")
 		}
 
-		if updateErr = bucket.Delete(documentKey); updateErr != nil {
+		if updateErr = bucket.Delete(fs.toKey(iri)); updateErr != nil {
 			return errors.Wrap(updateErr, "delete from bucket failed")
 		}
 
 		return nil
 	})
+}
+
+// Return a bbolt key that should be associated with iri.
+func (fs *FedEmbeddedStorage) toKey(iri *url.URL) []byte {
+	var target url.URL
+
+	target.Host = iri.Host
+	target.Path = iri.Path
+
+	return []byte(target.String())
 }

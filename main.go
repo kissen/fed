@@ -39,9 +39,7 @@ func openDatabase() db.FedStorage {
 }
 
 func listenAndAccept(storage db.FedStorage) {
-	r := mux.NewRouter().StrictSlash(true)
-
-	// Activity Pub
+	// set up ap/ structs
 
 	common := &ap.FedCommonBehavior{}
 	socialProtocol := &ap.FedSocialProtocol{}
@@ -57,20 +55,36 @@ func listenAndAccept(storage db.FedStorage) {
 		database, clock,
 	)
 
-	r.HandleFunc(`/ap/{username:[A-Za-z]+}`, newActivityHandler(handler, storage)).Methods("GET", "POST")
-	r.HandleFunc(`/ap/{username:[A-Za-z]+}/inbox`, newInboxHandler(actor, storage)).Methods("GET", "POST")
-	r.HandleFunc(`/ap/{username:[A-Za-z]+}/outbox`, newOutboxHandler(actor, storage)).Methods("GET", "POST")
-	r.HandleFunc(`/ap/{username:[A-Za-z]+}/followers`, newActivityHandler(handler, storage)).Methods("GET", "POST")
-	r.HandleFunc(`/ap/{username:[A-Za-z]+}/following`, newActivityHandler(handler, storage)).Methods("GET", "POST")
-	r.HandleFunc(`/ap/{username:[A-Za-z]+}/liked`, newActivityHandler(handler, storage)).Methods("GET", "POST")
-	r.HandleFunc(`/ap/storage/{id:[A-Za-z0-9\-]}`, newActivityHandler(handler, storage)).Methods("GET", "POST")
+	// build up go-fed objects
 
-	// Let's rock!
+	inboxHandler := newInboxHandler(actor, storage)
+	outboxHandler := newOutboxHandler(actor, storage)
+	activityHandler := newActivityHandler(handler, storage)
+
+	// set up routes
+
+	router := mux.NewRouter().StrictSlash(false)
+
+	router.HandleFunc(`/ap/{username:[A-Za-z]+}/inbox`, inboxHandler).Methods("GET", "POST")
+	router.HandleFunc(`/ap/{username:[A-Za-z]+}/outbox`, outboxHandler).Methods("GET", "POST")
+
+	activityRoutes := []string{
+		`/ap/{username:[A-Za-z]+}`, `/ap/{username:[A-Za-z]+}/followers`,
+		`/ap/{username:[A-Za-z]+}/following`, `/ap/{username:[A-Za-z]+}/liked`,
+		`/ap/storage/{id:[A-Za-z0-9\-]+}`,
+	}
+
+	for _, route := range activityRoutes {
+		router.HandleFunc(route, activityHandler).Methods("GET", "POST")
+	}
+
+	// let's rock!
 
 	addr := ":9999"
 
 	log.Printf("Starting on addr=%v...", addr)
-	err := http.ListenAndServe(addr, r)
+
+	err := http.ListenAndServe(addr, router)
 	log.Fatal(err)
 }
 
