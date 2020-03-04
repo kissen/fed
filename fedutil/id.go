@@ -1,4 +1,4 @@
-package help
+package fedutil
 
 import (
 	"github.com/go-fed/activity/streams/vocab"

@@ -5,7 +5,7 @@ import (
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/help"
+	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -90,7 +90,7 @@ func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab
 	} else if page, err := collectPage(c, user.Outbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		help.SetIdOn(page, iri.URL())
+		fedutil.SetIdOn(page, iri.URL())
 		return page, nil
 	}
 }

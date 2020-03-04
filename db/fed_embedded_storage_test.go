@@ -3,7 +3,7 @@ package db
 import (
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/help"
+	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -178,15 +178,15 @@ func TestStoreAndRetrieveNote(t *testing.T) {
 		t.Fatalf("retrieved type does not match stored type obj=%v TypeName=", obj)
 	}
 
-	origName := help.Name(note)
-	parsedName := help.Name(parsed)
+	origName := fedutil.Name(note)
+	parsedName := fedutil.Name(parsed)
 
 	if origName != parsedName {
 		t.Errorf("got bad name expected=%v got=%v", origName, parsedName)
 	}
 
-	origContent := help.Content(note)
-	parsedContent := help.Content(parsed)
+	origContent := fedutil.Content(note)
+	parsedContent := fedutil.Content(parsed)
 
 	if origContent != parsedContent {
 		t.Errorf("got bad content expected=%v got=%v", origName, parsedName)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"go.etcd.io/bbolt"
 	"log"
 	"net/url"
@@ -136,7 +137,7 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 		return nil, err
 	}
 
-	if obj, err = BytesToVocab(bytes); err != nil {
+	if obj, err = fedutil.BytesToVocab(bytes); err != nil {
 		return nil, errors.Wrap(err, "deserializing object failed")
 	}
 
@@ -146,7 +147,7 @@ func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err 
 func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
 	log.Printf("StoreObject(%v)", iri)
 
-	documentValue, err := VocabToBytes(obj)
+	documentValue, err := fedutil.VocabToBytes(obj)
 	if err != nil {
 		return errors.Wrap(err, "could not serialize object")
 	}

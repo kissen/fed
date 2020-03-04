@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -111,7 +111,7 @@ func (f *FedTransport) BatchDeliver(c context.Context, b []byte, recipients []*u
 func (f *FedTransport) dereferenceFromStorage(c context.Context, iri *url.URL) ([]byte, error) {
 	if obj, err := FromContext(c).Storage.RetrieveObject(iri); err != nil {
 		return nil, err
-	} else if bytes, err := db.VocabToBytes(obj); err != nil {
+	} else if bytes, err := fedutil.VocabToBytes(obj); err != nil {
 		return nil, err
 	} else {
 		return bytes, nil

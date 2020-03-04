@@ -1,4 +1,4 @@
-package help
+package fedutil
 
 import (
 	"github.com/PuerkitoBio/purell"

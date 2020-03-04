@@ -53,7 +53,7 @@ func FromContext(ctx context.Context) *FedContext {
 	return fctx
 }
 
-// Return a pointer pointing to argument s. This is helpful when setting
+// Return a pointer pointing to argument s. This is fedutilful when setting
 // optional/pointer members of the FedContext struct.
 func Just(s string) *string {
 	return &s

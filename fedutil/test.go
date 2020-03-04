@@ -1,4 +1,4 @@
-package help
+package fedutil
 
 import (
 	"net/url"

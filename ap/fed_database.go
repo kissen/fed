@@ -6,7 +6,7 @@ import (
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/help"
+	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"log"
 	"net/url"
 	"sync"
@@ -76,7 +76,7 @@ func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.Acti
 	} else if page, err := collectPage(c, user.Inbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		help.SetIdOn(page, iri.URL())
+		fedutil.SetIdOn(page, iri.URL())
 		return page, nil
 	}
 }
@@ -89,7 +89,7 @@ func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.Acti
 func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrderedCollectionPage) error {
 	log.Println("SetInbox()")
 
-	id := help.Id(inbox)
+	id := fedutil.Id(inbox)
 	iri := IRI{c, id}
 
 	if user, err := iri.RetrieveOwner(); err != nil {
@@ -240,7 +240,7 @@ func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, e
 func (f *FedDatabase) Create(c context.Context, asType vocab.Type) error {
 	log.Println("Create()")
 
-	target := help.Id(asType)
+	target := fedutil.Id(asType)
 	return FromContext(c).Storage.StoreObject(target, asType)
 }
 
@@ -256,7 +256,7 @@ func (f *FedDatabase) Create(c context.Context, asType vocab.Type) error {
 func (f *FedDatabase) Update(c context.Context, asType vocab.Type) error {
 	log.Println("Update()")
 
-	target := help.Id(asType)
+	target := fedutil.Id(asType)
 	return FromContext(c).Storage.StoreObject(target, asType)
 }
 
@@ -286,7 +286,7 @@ func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vo
 	} else if page, err := collectPage(c, user.Outbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		help.SetIdOn(page, iri.URL())
+		fedutil.SetIdOn(page, iri.URL())
 		return page, nil
 	}
 }
@@ -299,7 +299,7 @@ func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vo
 func (f *FedDatabase) SetOutbox(c context.Context, outbox vocab.ActivityStreamsOrderedCollectionPage) error {
 	log.Println("SetOutbox()")
 
-	id := help.Id(outbox)
+	id := fedutil.Id(outbox)
 	iri := IRI{c, id}
 
 	if user, err := iri.RetrieveOwner(); err != nil {
@@ -340,7 +340,7 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 	} else if set, err := collectSet(c, user.Followers); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		help.SetIdOn(set, iri.URL())
+		fedutil.SetIdOn(set, iri.URL())
 		return set, nil
 	}
 }
@@ -361,7 +361,7 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 	} else if set, err := collectSet(c, user.Following); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		help.SetIdOn(set, iri.URL())
+		fedutil.SetIdOn(set, iri.URL())
 		return set, nil
 	}
 }
@@ -382,7 +382,7 @@ func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers voc
 	} else if set, err := collectSet(c, user.Liked); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		help.SetIdOn(set, iri.URL())
+		fedutil.SetIdOn(set, iri.URL())
 		return set, nil
 	}
 }
@@ -401,7 +401,7 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 	// build up the actor object
 
 	actor = streams.NewActivityStreamsPerson()
-	help.SetIdOn(actor, iri.URL())
+	fedutil.SetIdOn(actor, iri.URL())
 
 	name := streams.NewActivityStreamsNameProperty()
 	name.AppendXMLSchemaString(user.Name)
@@ -445,14 +445,14 @@ func (f *FedDatabase) addToStorage(c context.Context, collection vocab.ActivityS
 			// items that are not IRIs really should be full objects; if they are
 			// not something is probably wrong
 			panic("obj is nil")
-		} else if err := FromContext(c).Storage.StoreObject(help.Id(obj), obj); err != nil {
+		} else if err := FromContext(c).Storage.StoreObject(fedutil.Id(obj), obj); err != nil {
 			// XXX: here we quit while having modified the database; maybe need
 			// to think about transaction for the FedStorage interface to easily
 			// roll back such changes
-			return nil, errors.Wrapf(err, "cannot store iri=%v", help.Id(obj))
+			return nil, errors.Wrapf(err, "cannot store iri=%v", fedutil.Id(obj))
 		} else {
 			// object was successfully added to database
-			colIRIs = append(colIRIs, help.Id(obj))
+			colIRIs = append(colIRIs, fedutil.Id(obj))
 		}
 	}
 
