@@ -8,5 +8,8 @@
 	<h1>Error {{.Status}}: {{.StatusText}}</h1>
 	<hr>
 	<p>{{.Description}}</p>
-	<p>{{.Cause}}</p>
+	{{if .Cause}}
+		<hr>
+		<code>{{.Cause}}</code>
+	{{end}}
 {{end}}

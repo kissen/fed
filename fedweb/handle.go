@@ -17,11 +17,18 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 
 // Get /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
-	data := map[string]interface{}{
-		"Selected": "Stream",
+	user, err := Fetch("http://localhost:9999/ap/bob")
+	if err != nil {
+		Error(w, http.StatusInternalServerError, err)
+		return
 	}
 
-	Render(w, "stream.page.tmpl", data, http.StatusOK)
+	data := map[string]interface{}{
+		"Selected": "Stream",
+		"Objects":  []interface{}{user},
+	}
+
+	Render(w, "collection.page.tmpl", data, http.StatusOK)
 }
 
 // Get /liked
@@ -30,7 +37,7 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Liked",
 	}
 
-	Render(w, "stream.page.tmpl", data, http.StatusOK)
+	Render(w, "collection.page.tmpl", data, http.StatusOK)
 }
 
 // Get /following
@@ -39,7 +46,7 @@ func GetFollowing(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Following",
 	}
 
-	Render(w, "stream.page.tmpl", data, http.StatusOK)
+	Render(w, "collection.page.tmpl", data, http.StatusOK)
 }
 
 // Get /followers
@@ -48,7 +55,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Followers",
 	}
 
-	Render(w, "stream.page.tmpl", data, http.StatusOK)
+	Render(w, "collection.page.tmpl", data, http.StatusOK)
 }
 
 // GET /login

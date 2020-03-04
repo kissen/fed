@@ -1,0 +1,12 @@
+{{template "base" .}}
+
+{{define "title"}}
+	{{.Selected}}
+{{end}}
+
+{{define "body"}}
+	<p>Here be dragons.</p>
+	{{range .Objects}}
+	    <p>{{.}}
+	{{end}}
+{{end}}

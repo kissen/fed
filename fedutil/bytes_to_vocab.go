@@ -39,6 +39,11 @@ func BytesToVocab(bin []byte) (vocab.Type, error) {
 			obj = note
 			return nil
 		},
+
+		func(c context.Context, note vocab.ActivityStreamsPerson) error {
+			obj = note
+			return nil
+		},
 	)
 
 	if err != nil {
