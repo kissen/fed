@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"net/url"
 	"path"
 	"strings"

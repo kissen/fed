@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"github.com/go-fed/activity/pub"
-	"gitlab.cs.fau.de/kissen/fed/ap"
-	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/fedd/ap"
+	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"log"
 	"net/http"
 )

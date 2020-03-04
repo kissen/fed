@@ -2,7 +2,7 @@ package ap
 
 import (
 	"context"
-	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"net/url"
 	"testing"
 )

@@ -5,7 +5,7 @@ import (
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"log"
 	"net/url"
