@@ -12,6 +12,8 @@ func listenAndServe() {
 	router.HandleFunc("/", GetStream).Methods("GET")
 	router.HandleFunc("/login", GetLogin).Methods("GET")
 	router.HandleFunc("/login", PostLogin).Methods("POST")
+	router.NotFoundHandler = http.HandlerFunc(HandleNotFound)
+	router.MethodNotAllowedHandler = http.HandlerFunc(HandleMethodNotAllowed)
 
 	addr := ":8080"
 	log.Printf("starting on addr=%v...", addr)
