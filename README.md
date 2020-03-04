@@ -7,8 +7,9 @@ the `experiment/` branches, `master` doesn't even build right now.
 
 * `fedd` contains code for the backend so to speak, the federation daemon.
 
-* `fedw` contains code for a basic web interface that speaks to `fedd`. Ideally
-  it should be able to speak with any ActivityPub service.o
+* `fedweb` contains code for a basic web interface that speaks to
+  `fedd`. Ideally it should be able to speak with any ActivityPub
+  service.
 
 * `fedutil` contains shared code between `fedd` and `fedw`. In
   particular, it contains convenience functions that work on types
