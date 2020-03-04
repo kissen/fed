@@ -7,7 +7,7 @@ import (
 
 // Path=/static/*
 func GetStatic(w http.ResponseWriter, r *http.Request) {
-	GetStream(w, r)
+	http.Error(w, "not implemented", http.StatusNotImplemented)
 }
 
 // Path=/
@@ -30,8 +30,10 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 
 // Path=/login
 func GetLogin(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "not implemented", http.StatusNotImplemented)
 }
 
 // Path=/login
 func PostLogin(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "not implemented", http.StatusNotImplemented)
 }
