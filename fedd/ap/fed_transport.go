@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 )
+
 // Implements the go-fed/activity/pub/FedTransport interface (version 1.0)
 type FedTransport struct {
 	Context   context.Context

@@ -1,0 +1,55 @@
+:root {
+    --accent: #177e89;
+    --accent-shadow: #084c61;
+    --error: #db3a34;
+    --warning: #ffc857;
+    --ink: #323031;
+    --accent-ink: white;
+}
+
+body {
+    font-family: sans-serif;
+    font-size: 18pt;
+    margin: 0;
+    padding: 0;
+}
+
+nav {
+    background-color: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0;  /* https://stackoverflow.com/questions/5078239/how-do-i-remove-the-space-between-inline-block-elements */
+    margin-bottom: 1em;
+}
+
+.navbutton {
+    color: var(--accent-ink);
+    display: inline-block;
+    font-size: 18pt;
+    padding-right: 1em;
+    padding-top: 1em;
+}
+
+.navbuttonselected {
+    background-color: var(--accent-shadow);
+    color: var(--accent-ink);
+    display: inline-block;
+    font-size: 18pt;
+    padding-right: 1em;
+    padding-top: 1em;
+}
+
+.navbutton:hover {
+    background-color: var(--accent-shadow);
+}
+
+main {
+    color: var(--ink);
+    margin: auto;
+    max-width: 600px;
+    padding: 1em;
+    width: 90%;
+}
+
+main > h1 {
+    font-size: 24pt;
+}

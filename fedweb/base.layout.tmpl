@@ -4,11 +4,36 @@
 	<head>
 		<title>{{template "title" .}}</title>
 		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=0.8">
+		<link rel=stylesheet href="/static/fedweb.css">
 	</head>
 
 	<body>
-		{{template "body" .}}
+		<nav>
+		    <!-- These divs are so close to each other because if we put each in a seperate line,
+		         we get ugly gaps on the tabs. -->
+		    <a href="stream">
+			    <div class={{if eq .Selected "Stream"}}"navbuttonselected"{{else}}"navbutton"{{end}}>
+				Stream
+			    </div>
+		    </a><a href="liked">
+			    <div class={{if eq .Selected "Liked"}}"navbuttonselected"{{else}}"navbutton"{{end}}>
+				Liked
+			    </div>
+		    </a><a href="following">
+			    <div class={{if eq .Selected "Following"}}"navbuttonselected"{{else}}"navbutton"{{end}}>
+				Following
+			    </div>
+		    </a><a href="followers">
+			    <div class={{if eq .Selected "Followers"}}"navbuttonselected"{{else}}"navbutton"{{end}}>
+				Followers
+			    </div>
+		    </a>
+		</nav>
+
+		<main>
+			{{template "body" .}}
+		</main>
 	</body>
 </html>
 {{end}}

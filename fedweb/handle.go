@@ -1,37 +1,92 @@
 package main
 
 import (
+	"github.com/kissen/httpstatus"
 	"html/template"
+	"io"
+	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
+	"path"
 )
 
-// Path=/static/*
-func GetStatic(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotImplemented, nil)
+// GET /
+func GetIndex(w http.ResponseWriter, r *http.Request) {
 }
 
-// Path=/
+// Get /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
-	Render(w, "stream.page.tmpl", nil, http.StatusOK)
+	data := map[string]interface{}{
+		"Selected": "Stream",
+	}
+
+	Render(w, "stream.page.tmpl", data, http.StatusOK)
 }
 
-// Path=/login
+// Get /liked
+func GetLiked(w http.ResponseWriter, r *http.Request) {
+	data := map[string]interface{}{
+		"Selected": "Liked",
+	}
+
+	Render(w, "stream.page.tmpl", data, http.StatusOK)
+}
+
+// Get /following
+func GetFollowing(w http.ResponseWriter, r *http.Request) {
+	data := map[string]interface{}{
+		"Selected": "Following",
+	}
+
+	Render(w, "stream.page.tmpl", data, http.StatusOK)
+}
+
+// Get /followers
+func GetFollowers(w http.ResponseWriter, r *http.Request) {
+	data := map[string]interface{}{
+		"Selected": "Followers",
+	}
+
+	Render(w, "stream.page.tmpl", data, http.StatusOK)
+}
+
+// GET /login
 func GetLogin(w http.ResponseWriter, r *http.Request) {
 	Error(w, http.StatusNotImplemented, nil)
 }
 
-// Path=/login
+// POST /login
 func PostLogin(w http.ResponseWriter, r *http.Request) {
 	Error(w, http.StatusNotImplemented, nil)
 }
 
-// Error Handler
+// GET /static/*
+func GetStatic(w http.ResponseWriter, r *http.Request) {
+	filename := path.Base(r.URL.Path)
+
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Printf("opening file failed: %v", err)
+		return
+	}
+
+	mimetype := mime.TypeByExtension(path.Ext(filename))
+	w.Header().Add("Content-Type", mimetype)
+
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := io.WriteString(w, string(content)); err != nil {
+		log.Printf("writing file to client failed: %v", err)
+	}
+}
+
+// Handler for Not Found Errors
 func HandleNotFound(w http.ResponseWriter, r *http.Request) {
 	Error(w, http.StatusNotFound, nil)
 }
 
-// Error Handler
+// Handler for Method Not Allowed Errors
 func HandleMethodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	Error(w, http.StatusMethodNotAllowed, nil)
 }
@@ -40,23 +95,38 @@ func HandleMethodNotAllowed(w http.ResponseWriter, r *http.Request) {
 // cause may be left nil.
 func Error(w http.ResponseWriter, status int, cause error) {
 	data := map[string]interface{}{
-		"Status":     status,
-		"StatusText": http.StatusText(status),
+		"Status":      status,
+		"StatusText":  http.StatusText(status),
+		"Description": httpstatus.Describe(status),
 	}
 
 	if cause != nil {
-		data["Message"] = cause.Error()
-	} else {
-		data["Message"] = ""
+		data["Cause"] = cause.Error()
 	}
 
 	Render(w, "error.page.tmpl", data, status)
 }
 
-func Render(w http.ResponseWriter, page string, data interface{}, status int) {
+func Render(w http.ResponseWriter, page string, data map[string]interface{}, status int) {
+	// fill in required fiels in data
+
+	required := []string{
+		"Selected",
+	}
+
+	for _, key := range required {
+		if _, found := data[key]; !found {
+			data[key] = ""
+		}
+	}
+
+	// load template files
+
 	templates := []string{
 		page, "base.layout.tmpl",
 	}
+
+	// compile template
 
 	ts, err := template.ParseFiles(templates...)
 
@@ -65,6 +135,8 @@ func Render(w http.ResponseWriter, page string, data interface{}, status int) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// write http response
 
 	w.WriteHeader(status)
 
