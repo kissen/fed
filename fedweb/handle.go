@@ -17,15 +17,29 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 
 // Get /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
+	// fetch single actor
+
 	user, err := Fetch("http://localhost:9999/ap/bob")
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	// render html for actor
+
+	card := Card{user}
+
+	html, err := card.HTML()
+	if err != nil {
+		Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// set up data dict and render
+
 	data := map[string]interface{}{
 		"Selected": "Stream",
-		"Objects":  []interface{}{user},
+		"Object":   html,
 	}
 
 	Render(w, "collection.page.tmpl", data, http.StatusOK)
