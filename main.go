@@ -91,8 +91,7 @@ func listenAndAccept(storage db.FedStorage) {
 
 	log.Printf("starting on addr=%v...", addr)
 
-	err := http.ListenAndServe(addr, router)
-	log.Fatal(err)
+	Must(http.ListenAndServe(addr, router))
 }
 
 func main() {

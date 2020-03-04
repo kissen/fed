@@ -1,8 +1,9 @@
 package main
 
-// Panic with err if err is not nil.
+import "log"
+
 func Must(err error) {
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
