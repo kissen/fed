@@ -19,26 +19,31 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 
 // Get /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
+	// set up fixed params
+
+	data := map[string]interface{}{
+		"Selected": "Stream",
+	}
+
 	// fetch single note
 
 	addr := "http://localhost:9999/ap/storage/acd86ee2-3b65-46f9-9b5a-bdf7af2b2dff"
 	user, err := Fetch(addr)
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err)
+		Error(w, http.StatusInternalServerError, err, data)
 		return
 	}
 
 	userMap, err := fedutil.VocabToMap(user)
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err)
+		Error(w, http.StatusInternalServerError, err, data)
 		return
 	}
 
 	// set up data dict and render
 
-	data := map[string]interface{}{
-		"Selected": "Stream",
-		"Items":    []interface{}{userMap},
+	data["Items"] = []interface{}{
+		userMap,
 	}
 
 	Render(w, "collection.page.tmpl", data, http.StatusOK)
@@ -73,12 +78,12 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 
 // GET /login
 func GetLogin(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotImplemented, nil)
+	Error(w, http.StatusNotImplemented, nil, nil)
 }
 
 // POST /login
 func PostLogin(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotImplemented, nil)
+	Error(w, http.StatusNotImplemented, nil, nil)
 }
 
 // GET /static/*
@@ -103,28 +108,33 @@ func GetStatic(w http.ResponseWriter, r *http.Request) {
 
 // Handler for Not Found Errors
 func HandleNotFound(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotFound, nil)
+	Error(w, http.StatusNotFound, nil, nil)
 }
 
 // Handler for Method Not Allowed Errors
 func HandleMethodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusMethodNotAllowed, nil)
+	Error(w, http.StatusMethodNotAllowed, nil, nil)
 }
 
 // Write out the Error template with given status and cause.
 // cause may be left nil.
-func Error(w http.ResponseWriter, status int, cause error) {
-	data := map[string]interface{}{
+func Error(w http.ResponseWriter, status int, cause error, data map[string]interface{}) {
+	// set up data for the error handler
+
+	errorData := map[string]interface{}{
 		"Status":      status,
 		"StatusText":  http.StatusText(status),
 		"Description": httpstatus.Describe(status),
 	}
 
 	if cause != nil {
-		data["Cause"] = cause.Error()
+		errorData["Cause"] = cause.Error()
 	}
 
-	Render(w, "error.page.tmpl", data, status)
+	// join with other generic keys; render
+
+	renderData := Sum(data, errorData)
+	Render(w, "error.page.tmpl", renderData, status)
 }
 
 func Render(w http.ResponseWriter, page string, data map[string]interface{}, status int) {
@@ -153,7 +163,6 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 
 	if err != nil {
 		log.Printf("parsing templates failed: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
