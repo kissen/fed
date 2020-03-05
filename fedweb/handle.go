@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kissen/httpstatus"
+	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 
 // GET /
 func GetIndex(w http.ResponseWriter, r *http.Request) {
+	GetStream(w, r)
 }
 
 // Get /stream
@@ -25,11 +27,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// render html for actor
-
-	card := Card{user}
-
-	html, err := card.HTML()
+	userMap, err := fedutil.VocabToMap(user)
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err)
 		return
@@ -39,7 +37,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]interface{}{
 		"Selected": "Stream",
-		"Object":   html,
+		"Items":   []interface{}{ userMap },
 	}
 
 	Render(w, "collection.page.tmpl", data, http.StatusOK)

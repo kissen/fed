@@ -5,6 +5,14 @@
 {{end}}
 
 {{define "body"}}
-	<p>Here be dragons.</p>
-	<p>object={{.Object}}</p>
+	<ul>
+	{{range .Items}}
+		<li>{{.id}}</li>
+		<li>{{.name}}</li>
+		<li>{{.inbox}}</li>
+		<li>{{.outbox}}</li>
+	{{else}}
+		<p>Here be <b>dragons.</p>
+	{{end}}
+	</ul>
 {{end}}
