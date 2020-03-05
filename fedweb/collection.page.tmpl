@@ -5,14 +5,16 @@
 {{end}}
 
 {{define "body"}}
-	<ul>
 	{{range .Items}}
-		<li>{{.id}}</li>
-		<li>{{.name}}</li>
-		<li>{{.inbox}}</li>
-		<li>{{.outbox}}</li>
+		<div class="card">
+			{{if eq .type "Person"}}
+				{{template "person" .}}
+			{{end}}
+			{{if eq .type "Note"}}
+				{{template "note" .}}
+			{{end}}
+		</div>
 	{{else}}
-		<p>Here be <b>dragons.</p>
+		<p>Here be dragons.</p>
 	{{end}}
-	</ul>
 {{end}}

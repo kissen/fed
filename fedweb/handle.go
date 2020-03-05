@@ -14,14 +14,15 @@ import (
 
 // GET /
 func GetIndex(w http.ResponseWriter, r *http.Request) {
-	GetStream(w, r)
+	http.RedirectHandler("stream", http.StatusFound).ServeHTTP(w, r)
 }
 
 // Get /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
-	// fetch single actor
+	// fetch single note
 
-	user, err := Fetch("http://localhost:9999/ap/bob")
+	addr := "http://localhost:9999/ap/storage/acd86ee2-3b65-46f9-9b5a-bdf7af2b2dff"
+	user, err := Fetch(addr)
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err)
 		return
@@ -37,7 +38,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]interface{}{
 		"Selected": "Stream",
-		"Items":   []interface{}{ userMap },
+		"Items":    []interface{}{userMap},
 	}
 
 	Render(w, "collection.page.tmpl", data, http.StatusOK)
@@ -142,7 +143,8 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 	// load template files
 
 	templates := []string{
-		page, "base.layout.tmpl",
+		page, "base.layout.tmpl", "person.fragment.tmpl",
+		"note.fragment.tmpl",
 	}
 
 	// compile template

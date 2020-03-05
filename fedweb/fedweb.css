@@ -45,11 +45,18 @@ nav {
 main {
     color: var(--ink);
     margin: auto;
-    max-width: 600px;
-    padding: 1em;
+    max-width: 28em;
+    padding-top: 1em;
     width: 90%;
 }
 
 main > h1 {
     font-size: 24pt;
+}
+
+main > .card {
+    border: 1pt solid var(--accent);
+    box-shadow: 4pt 4pt var(--accent-shadow);
+    font-family: serif;
+    padding: 0.5em;
 }
