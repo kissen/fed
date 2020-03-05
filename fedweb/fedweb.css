@@ -8,7 +8,7 @@
 }
 
 body {
-    font-family: sans-serif;
+    font-family: "Open Sans", Helvetica, Arial, sans-serif;
     font-size: 18pt;
     margin: 0;
     padding: 0;
@@ -57,6 +57,5 @@ main > h1 {
 main > .card {
     border: 1pt solid var(--accent);
     box-shadow: 4pt 4pt var(--accent-shadow);
-    font-family: serif;
     padding: 0.5em;
 }
