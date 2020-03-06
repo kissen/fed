@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"html/template"
 	"log"
 	"net/url"
@@ -54,12 +53,7 @@ func NewWebVocabOnline(iri *url.URL) (WebVocab, error) {
 		return nil, errors.New("iri is nil")
 	}
 
-	raw, err := fedutil.Get(iri)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not dereference iri in collection")
-	}
-
-	obj, err := fedutil.BytesToVocab(raw)
+	obj, err := FetchIRI(iri)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot read mappings")
 	}
@@ -209,12 +203,7 @@ func (v *webVocab) author() (vocab.ActivityStreamsPerson, error) {
 		return nil, errors.Wrap(err, "bad actor IRI")
 	}
 
-	raw, err := fedutil.Get(iri)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot fetch actor")
-	}
-
-	obj, err := fedutil.BytesToVocab(raw)
+	obj, err := FetchIRI(iri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do not understand actor json")
 	}
