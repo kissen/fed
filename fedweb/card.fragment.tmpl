@@ -1,0 +1,10 @@
+{{define "card"}}
+	<div class="card">
+		{{if eq .type "Person"}}
+			{{template "person" .}}
+		{{end}}
+		{{if eq .type "Note"}}
+			{{template "note" .}}
+		{{end}}
+	</div>
+{{end}}

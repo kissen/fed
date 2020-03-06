@@ -1,3 +1,7 @@
+/*
+ * variable declarations
+ */
+
 :root {
     --accent: #177e89;
     --accent-shadow: #084c61;
@@ -5,14 +9,26 @@
     --warning: #ffc857;
     --ink: #323031;
     --accent-ink: white;
+
+    --small: 12pt;
+    --medium: 16pt;
+    --big: 18pt;
 }
+
+/*
+ * global settings
+ */
 
 body {
     font-family: "Open Sans", Helvetica, Arial, sans-serif;
-    font-size: 18pt;
+    font-size: var(--medium);
     margin: 0;
     padding: 0;
 }
+
+/*
+ * navigation bar
+ */
 
 nav {
     background-color: var(--accent);
@@ -24,7 +40,7 @@ nav {
 .navbutton {
     color: var(--accent-ink);
     display: inline-block;
-    font-size: 18pt;
+    font-size: var(--medium);
     padding-right: 1em;
     padding-top: 1em;
 }
@@ -33,7 +49,7 @@ nav {
     background-color: var(--accent-shadow);
     color: var(--accent-ink);
     display: inline-block;
-    font-size: 18pt;
+    font-size: var(--medium);
     padding-right: 1em;
     padding-top: 1em;
 }
@@ -41,6 +57,10 @@ nav {
 .navbutton:hover {
     background-color: var(--accent-shadow);
 }
+
+/*
+ * general content formatting
+ */
 
 main {
     color: var(--ink);
@@ -51,11 +71,37 @@ main {
 }
 
 main > h1 {
-    font-size: 24pt;
+    font-size: var(--big);
 }
 
+/*
+ * styling of the individual content cards and their fields
+ */
+
 main > .card {
-    border: 1pt solid var(--accent);
-    box-shadow: 4pt 4pt var(--accent-shadow);
-    padding: 0.5em;
+    background-color: var(--accent);
+    color: var(--accent-ink);
+    margin-bottom: 0.5em;
+}
+
+main > .card:hover {
+    background-color: var(--accent-shadow);
+}
+
+main > .card > .cardmeta {
+    font-size: var(--small);
+    padding-left: -20pt;
+    padding: 4pt 4pt 0 4pt;
+}
+
+main > .card > .cardmain {
+    padding-left: -20pt;
+    padding: 0 4pt 4pt 14pt;
+}
+
+main > .card > .name {
+    font-style: italic;
+}
+
+main > .card > .content {
 }

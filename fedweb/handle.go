@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"html/template"
@@ -26,8 +27,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fetch single note
-
-	addr := "http://localhost:9999/ap/storage/acd86ee2-3b65-46f9-9b5a-bdf7af2b2dff"
+	addr := "http://localhost:9999/ap/storage/6227b40e-1930-4ac3-beea-4fc81fc8bf5a"
 	user, err := Fetch(addr)
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err, data)
@@ -74,6 +74,13 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Render(w, "collection.page.tmpl", data, http.StatusOK)
+}
+
+func GetRemote(w http.ResponseWriter, r *http.Request) {
+	remotePath := mux.Vars(r)["remotepath"]
+	log.Println("remotePath:", remotePath)
+
+	Error(w, http.StatusNotImplemented, nil, nil)
 }
 
 // GET /login
@@ -153,8 +160,8 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 	// load template files
 
 	templates := []string{
-		page, "base.layout.tmpl", "person.fragment.tmpl",
-		"note.fragment.tmpl",
+		page, "base.layout.tmpl", "card.fragment.tmpl",
+		"person.fragment.tmpl", "note.fragment.tmpl",
 	}
 
 	// compile template

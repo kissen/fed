@@ -1,4 +1,16 @@
 {{define "note"}}
-	<p>{{.name}}</p>
-	<p>{{.content}}</p>
+	<div class="cardmeta">
+	    <span style="font-weight: bold">{{.attributedTo}}</span>
+	    {{.updated}}
+	</div>
+
+	<div class="cardmain">
+		<p class="name">
+			{{.name}}
+		</p>
+
+		<p class="content">
+			{{.content}}
+		</p>
+	</div>
 {{end}}
