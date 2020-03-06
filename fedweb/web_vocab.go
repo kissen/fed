@@ -49,6 +49,53 @@ func NewWebVocab(target vocab.Type) (WebVocab, error) {
 	return wocab, nil
 }
 
+func NewWebVocabOnline(iri *url.URL) (WebVocab, error) {
+	if iri == nil {
+		return nil, errors.New("iri is nil")
+	}
+
+	raw, err := fedutil.Get(iri)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not dereference iri in collection")
+	}
+
+	obj, err := fedutil.BytesToVocab(raw)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot read mappings")
+	}
+
+	wocab, err := NewWebVocab(obj)
+	if err != nil {
+		return nil, errors.Wrap(err, "derference ok, but wrapping failed")
+	}
+
+	return wocab, nil
+}
+
+func NewWebVocabs(collection vocab.ActivityStreamsCollection) ([]WebVocab, error) {
+	items := collection.GetActivityStreamsItems()
+
+	var ws []WebVocab
+
+	for it := items.Begin(); it != items.End(); it = it.Next() {
+		if it.IsIRI() {
+			if w, err := NewWebVocabOnline(it.GetIRI()); err != nil {
+				return nil, errors.Wrap(err, "wrapping IRI failed")
+			} else {
+				ws = append(ws, w)
+			}
+		} else {
+			if w, err := NewWebVocab(it.GetType()); err != nil {
+				return nil, errors.Wrap(err, "wrapping object failed")
+			} else {
+				ws = append(ws, w)
+			}
+		}
+	}
+
+	return ws, nil
+}
+
 func (v *webVocab) Type() string {
 	return v.mapping("type")
 }
