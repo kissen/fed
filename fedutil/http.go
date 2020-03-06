@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -23,6 +24,8 @@ var cache struct {
 
 // Get the ActivityPub resource at iri.
 func Get(iri *url.URL) (body []byte, err error) {
+	log.Printf("Get(%v)", iri)
+
 	// build up the request
 
 	var req *http.Request
@@ -56,6 +59,8 @@ func Get(iri *url.URL) (body []byte, err error) {
 
 // Post body to the ActiviyPub endpoint at iri.
 func Post(body []byte, iri *url.URL) (err error) {
+	log.Printf("Post(%v)", iri)
+
 	// preapre the io.Reader that contains the request body
 
 	copy := append([]byte(nil), body...)

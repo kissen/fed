@@ -10,7 +10,9 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"net/url"
 	"path"
+	"strings"
 )
 
 // GET /
@@ -77,10 +79,51 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRemote(w http.ResponseWriter, r *http.Request) {
-	remotePath := mux.Vars(r)["remotepath"]
-	log.Println("remotePath:", remotePath)
+	// get and sanitize iri
 
-	Error(w, http.StatusNotImplemented, nil, nil)
+	query := mux.Vars(r)["remotepath"]
+
+	iri, err := url.Parse(query)
+	if err != nil {
+		Error(w, http.StatusBadRequest, err, nil)
+		return
+	}
+
+	iri.Path = strings.TrimLeft(iri.Path, "/")
+
+	// fetch object
+
+	apobj, err := Fetch(iri.String())
+	if err != nil {
+		Error(w, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	// convert to map
+
+	userMap, err := fedutil.VocabToMap(apobj)
+	if err != nil {
+		Error(w, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	// XXX: escape map members
+
+	for key, value := range userMap {
+		if s, ok := value.(string); ok {
+			userMap[key] = template.HTML(s)
+		}
+	}
+
+	// set up data dict and render
+
+	data := map[string]interface{}{
+		"Items": []interface{}{
+			userMap,
+		},
+	}
+
+	Render(w, "collection.page.tmpl", data, http.StatusOK)
 }
 
 // GET /login

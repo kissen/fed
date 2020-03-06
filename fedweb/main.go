@@ -7,7 +7,7 @@ import (
 )
 
 func listenAndServe() {
-	router := mux.NewRouter().StrictSlash(true)
+	router := mux.NewRouter().StrictSlash(false)
 
 	router.HandleFunc("/", GetIndex).Methods("GET")
 	router.HandleFunc("/stream", GetStream).Methods("GET")
