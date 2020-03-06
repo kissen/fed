@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -48,7 +49,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 		userMap,
 	}
 
-	Render(w, "collection.page.tmpl", data, http.StatusOK)
+	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
 // Get /liked
@@ -57,7 +58,7 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Liked",
 	}
 
-	Render(w, "collection.page.tmpl", data, http.StatusOK)
+	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
 // Get /following
@@ -66,7 +67,7 @@ func GetFollowing(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Following",
 	}
 
-	Render(w, "collection.page.tmpl", data, http.StatusOK)
+	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
 // Get /followers
@@ -75,7 +76,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Followers",
 	}
 
-	Render(w, "collection.page.tmpl", data, http.StatusOK)
+	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
 func GetRemote(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +124,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	Render(w, "collection.page.tmpl", data, http.StatusOK)
+	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
 // GET /login
@@ -138,15 +139,16 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 
 // GET /static/*
 func GetStatic(w http.ResponseWriter, r *http.Request) {
-	filename := path.Base(r.URL.Path)
+	name := path.Base(r.URL.Path)
+	relpath := filepath.Join("res", name)
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := ioutil.ReadFile(relpath)
 	if err != nil {
 		log.Printf("opening file failed: %v", err)
 		return
 	}
 
-	mimetype := mime.TypeByExtension(path.Ext(filename))
+	mimetype := mime.TypeByExtension(path.Ext(name))
 	w.Header().Add("Content-Type", mimetype)
 
 	w.WriteHeader(http.StatusOK)
@@ -184,7 +186,7 @@ func Error(w http.ResponseWriter, status int, cause error, data map[string]inter
 	// join with other generic keys; render
 
 	renderData := Sum(data, errorData)
-	Render(w, "error.page.tmpl", renderData, status)
+	Render(w, "res/error.page.tmpl", renderData, status)
 }
 
 func Render(w http.ResponseWriter, page string, data map[string]interface{}, status int) {
@@ -203,8 +205,8 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 	// load template files
 
 	templates := []string{
-		page, "base.layout.tmpl", "card.fragment.tmpl",
-		"person.fragment.tmpl", "note.fragment.tmpl",
+		page, "res/base.layout.tmpl", "res/card.fragment.tmpl",
+		"res/person.fragment.tmpl", "res/note.fragment.tmpl",
 	}
 
 	// compile template
