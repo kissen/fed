@@ -100,27 +100,19 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// convert to map
+	// wrap object
 
-	userMap, err := fedutil.VocabToMap(apobj)
+	wrapped, err := NewWebVocab(apobj)
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err, nil)
 		return
-	}
-
-	// XXX: escape map members
-
-	for key, value := range userMap {
-		if s, ok := value.(string); ok {
-			userMap[key] = template.HTML(s)
-		}
 	}
 
 	// set up data dict and render
 
 	data := map[string]interface{}{
 		"Items": []interface{}{
-			userMap,
+			wrapped,
 		},
 	}
 

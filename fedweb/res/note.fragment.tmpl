@@ -1,16 +1,15 @@
 {{define "note"}}
 	<div class="cardmeta">
-	    <span style="font-weight: bold">{{.attributedTo}}</span>
-	    {{.updated}}
+		<span style="font-weight: bold">{{.XFrom}}</span>
 	</div>
 
 	<div class="cardmain">
 		<p class="name">
-			{{.name}}
+			{{.Name}}
 		</p>
 
 		<p class="content">
-			{{.content}}
+			{{.Content}}
 		</p>
 	</div>
 {{end}}

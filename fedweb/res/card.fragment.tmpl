@@ -1,9 +1,9 @@
 {{define "card"}}
 	<div class="card">
-		{{if eq .type "Person"}}
+		{{if eq .Type "Person"}}
 			{{template "person" .}}
 		{{end}}
-		{{if eq .type "Note"}}
+		{{if eq .Type "Note"}}
 			{{template "note" .}}
 		{{end}}
 	</div>
