@@ -1,9 +1,6 @@
-Use `/remote` to access
+Rethink the way we render cards. I think a separate section that just
+renders these fragments would be easier to mange than the current
+all-template approach.
 
-	http://localhost:8080/remote/http:/localhost:9999/ap/alice/inbox;
-
-you will find taht it doesn't work. Hint: I just wrote a function
-
-	NewWebVocabs
-
-(notice the plural) which should help you out.
+Think about what we want for the first POC. Only once we have the POC
+working should we think about refactoring.
