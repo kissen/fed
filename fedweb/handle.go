@@ -92,17 +92,9 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 	iri.Path = strings.TrimLeft(iri.Path, "/")
 
-	// fetch object
+	// fetch and wrap object
 
-	apobj, err := Fetch(iri.String())
-	if err != nil {
-		Error(w, http.StatusInternalServerError, err, nil)
-		return
-	}
-
-	// wrap object
-
-	wrapped, err := NewWebVocab(apobj)
+	wrapped, err := NewWebVocabOnline(iri)
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err, nil)
 		return
@@ -115,6 +107,8 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 			wrapped,
 		},
 	}
+
+	data["Items"] = wrapped.XIter()
 
 	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }

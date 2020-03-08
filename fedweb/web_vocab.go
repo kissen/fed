@@ -24,6 +24,7 @@ type WebVocab interface {
 
 	// helpers
 	XFrom() string
+	XIter() []WebVocab
 }
 
 type webVocab struct {
@@ -130,6 +131,36 @@ func (v *webVocab) XFrom() string {
 	} else {
 		return author
 	}
+}
+
+func (v *webVocab) XIter() (items []WebVocab) {
+	page, ok := v.target.(vocab.ActivityStreamsOrderedCollectionPage)
+	if !ok {
+		log.Println("bad type")
+		return nil
+	}
+
+	prop := page.GetActivityStreamsOrderedItems()
+
+	for it := prop.Begin(); it != prop.End(); it = it.Next() {
+		var wrapped WebVocab
+		var err error
+
+		if it.IsIRI() {
+			wrapped, err = NewWebVocabOnline(it.GetIRI())
+		} else {
+			obj := it.GetType()
+			wrapped, err = NewWebVocab(obj)
+		}
+
+		if err != nil {
+			log.Println("failed to wrap item from collection:", err)
+		} else {
+			items = append(items, wrapped)
+		}
+	}
+
+	return items
 }
 
 func (v *webVocab) from() (string, error) {
