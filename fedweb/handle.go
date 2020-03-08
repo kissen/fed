@@ -199,6 +199,8 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 	templates := []string{
 		page, "res/base.layout.tmpl", "res/card.fragment.tmpl",
 		"res/person.fragment.tmpl", "res/note.fragment.tmpl",
+		"res/ordered_collection.fragment.tmpl",
+		"res/ordered_collection_page.fragment.tmpl",
 	}
 
 	// compile template

@@ -40,8 +40,18 @@ func BytesToVocab(bin []byte) (vocab.Type, error) {
 			return nil
 		},
 
-		func(c context.Context, note vocab.ActivityStreamsPerson) error {
-			obj = note
+		func(c context.Context, person vocab.ActivityStreamsPerson) error {
+			obj = person
+			return nil
+		},
+
+		func(c context.Context, oc vocab.ActivityStreamsOrderedCollection) error {
+			obj = oc
+			return nil
+		},
+
+		func(c context.Context, page vocab.ActivityStreamsOrderedCollectionPage) error {
+			obj = page
 			return nil
 		},
 	)

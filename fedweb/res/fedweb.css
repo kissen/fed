@@ -27,6 +27,20 @@ body {
 }
 
 /*
+ * background overrides for warnings and errors
+ */
+
+.warning {
+    background-color: var(--warning);
+    color: var(--ink);
+}
+
+.error{
+    background-color: var(--error);
+    color: var(--accent-ink);
+}
+
+/*
  * navigation bar
  */
 
@@ -78,30 +92,30 @@ main > h1 {
  * styling of the individual content cards and their fields
  */
 
-main > .card {
+.card {
     background-color: var(--accent);
     color: var(--accent-ink);
     margin-bottom: 0.5em;
 }
 
-main > .card:hover {
+.card:hover {
     background-color: var(--accent-shadow);
 }
 
-main > .card > .cardmeta {
+.cardmeta {
     font-size: var(--small);
     padding-left: -20pt;
     padding: 4pt 4pt 0 4pt;
 }
 
-main > .card > .cardmain {
+.cardmain {
     padding-left: -20pt;
     padding: 0 4pt 4pt 14pt;
 }
 
-main > .card > .name {
+.name {
     font-style: italic;
 }
 
-main > .card > .content {
+.content {
 }

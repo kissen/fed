@@ -7,5 +7,13 @@
 		{{if eq .Type "Note"}}
 			{{template "note" .}}
 		{{end}}
+
+		{{if eq .Type "OrderedCollection"}}
+			{{template "ordered_collection" .}}
+		{{end}}
+
+		{{if eq .Type "OrderedCollectionPage"}}
+			{{template "ordered_collection_page" .}}
+		{{end}}
 	</div>
 {{end}}
