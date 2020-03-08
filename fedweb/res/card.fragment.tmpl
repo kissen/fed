@@ -1,19 +1,16 @@
 {{define "card"}}
-	<div class="card">
-		{{if eq .Type "Person"}}
-			{{template "person" .}}
-		{{end}}
+	<!-- This sucks. I think it would be better to have some helper
+	functions that output HTML fragments instead.-->
 
-		{{if eq .Type "Note"}}
-			{{template "note" .}}
-		{{end}}
-
-		{{if eq .Type "OrderedCollection"}}
-			{{template "ordered_collection" .}}
-		{{end}}
-
-		{{if eq .Type "OrderedCollectionPage"}}
-			{{template "ordered_collection_page" .}}
-		{{end}}
-	</div>
+	{{if eq .Type "Person"}}
+		{{template "person" .}}
+	{{else}}{{if eq .Type "Note"}}
+		{{template "note" .}}
+	{{else}}{{if eq .Type "OrderedCollection"}}
+		{{template "ordered_collection" .}}
+	{{else}}{{if eq .Type "OrderedCollectionPage"}}
+		{{template "ordered_collection_page" .}}
+	{{else}}
+		{{template "not_implemented" .}}
+	{{end}}{{end}}{{end}}{{end}}
 {{end}}

@@ -134,6 +134,7 @@ func (v *webVocab) XFrom() string {
 }
 
 func (v *webVocab) XIter() (items []WebVocab) {
+
 	page, ok := v.target.(vocab.ActivityStreamsOrderedCollectionPage)
 	if !ok {
 		log.Println("bad type")
@@ -148,9 +149,15 @@ func (v *webVocab) XIter() (items []WebVocab) {
 
 		if it.IsIRI() {
 			wrapped, err = NewWebVocabOnline(it.GetIRI())
+			if err != nil {
+				log.Println(err)
+			}
 		} else {
 			obj := it.GetType()
 			wrapped, err = NewWebVocab(obj)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 
 		if err != nil {

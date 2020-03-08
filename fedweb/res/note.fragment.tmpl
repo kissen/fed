@@ -1,15 +1,17 @@
 {{define "note"}}
-	<div class="cardmeta">
-		<span style="font-weight: bold">{{.XFrom}}</span>
-	</div>
+	<div class="card">
+		<div class="cardmeta">
+			<span style="font-weight: bold">{{.XFrom}}</span>
+		</div>
 
-	<div class="cardmain">
-		<p class="name">
-			{{.Name}}
-		</p>
+		<div class="cardmain">
+			<p class="name">
+				{{.Name}}
+			</p>
 
-		<p class="content">
-			{{.Content}}
-		</p>
+			<p class="content">
+				{{.Content}}
+			</p>
+		</div>
 	</div>
 {{end}}

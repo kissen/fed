@@ -108,8 +108,6 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	data["Items"] = wrapped.XIter()
-
 	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
@@ -195,6 +193,7 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 		"res/person.fragment.tmpl", "res/note.fragment.tmpl",
 		"res/ordered_collection.fragment.tmpl",
 		"res/ordered_collection_page.fragment.tmpl",
+		"res/not_implemented.fragment.tmpl",
 	}
 
 	// compile template
