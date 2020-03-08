@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
 	"html/template"
 	"log"
@@ -96,12 +97,14 @@ func (v *webVocab) Type() string {
 
 func (v *webVocab) Id() template.URL {
 	id := v.mapping("id")
-	return template.URL(id)
+	sanitized := v.sanitize(id)
+	return template.URL(sanitized)
 }
 
 func (v *webVocab) AttributedTo() template.URL {
 	author := v.mapping("attributedTo")
-	return template.URL(author)
+	sanitized := v.sanitize(author)
+	return template.URL(sanitized)
 }
 
 func (v *webVocab) Updated() string {
@@ -110,12 +113,14 @@ func (v *webVocab) Updated() string {
 
 func (v *webVocab) Name() template.HTML {
 	html := v.mapping("name")
-	return template.HTML(html)
+	sanitized := v.sanitize(html)
+	return template.HTML(sanitized)
 }
 
 func (v *webVocab) Content() template.HTML {
 	html := v.mapping("content")
-	return template.HTML(html)
+	sanitized := v.sanitize(html)
+	return template.HTML(sanitized)
 }
 
 func (v *webVocab) XFrom() string {
@@ -225,4 +230,15 @@ func (v *webVocab) mapping(key string) string {
 	} else {
 		return s
 	}
+}
+
+// Sanitize html such that it is safe for display.
+func (v *webVocab) sanitize(html string) string {
+	policy := bluemonday.NewPolicy()
+
+	policy.AllowStandardURLs()
+	policy.AllowAttrs("href").OnElements("a")
+	policy.AllowElements("p")
+
+	return policy.Sanitize(html)
 }
