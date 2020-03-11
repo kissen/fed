@@ -75,7 +75,7 @@ func FetchOrGet(collection vocab.ActivityStreamsOrderedCollectionPage) (items []
 	return items, nil
 }
 
-func FetchIter(it Iterator) (vocab.Type, error) {
+func FetchIter(it IterEntry) (vocab.Type, error) {
 	if !it.HasAny() {
 		return nil, errors.New("no value present")
 	} else if it.IsIRI() {
