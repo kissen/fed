@@ -37,6 +37,22 @@ type webVocab struct {
 
 // Return a wrapped version of target.
 func New(target vocab.Type) (WebVocab, error) {
+	return wrap(target)
+}
+
+func News(targets ...vocab.Type) ([]WebVocab, error) {
+	if ws, err := wraps(targets...); err != nil {
+		return nil, err
+	} else {
+		wvs := make([]WebVocab, len(ws))
+		for i := range ws {
+			wvs[i] = ws[i]
+		}
+		return wvs, nil
+	}
+}
+
+func wrap(target vocab.Type) (*webVocab, error) {
 	// do not allow nil arguments
 
 	if target == nil {
@@ -95,15 +111,15 @@ func New(target vocab.Type) (WebVocab, error) {
 	return wocab, nil
 }
 
-func News(targets ...vocab.Type) ([]WebVocab, error) {
+func wraps(targets ...vocab.Type) ([]*webVocab, error) {
 	group := &errgroup.Group{}
-	ws := make([]WebVocab, len(targets))
+	ws := make([]*webVocab, len(targets))
 
 	for i, target := range targets {
 		myi, mytarget := i, target
 
 		group.Go(func() error {
-			if w, err := New(mytarget); err != nil {
+			if w, err := wrap(mytarget); err != nil {
 				return err
 			} else {
 				ws[myi] = w
@@ -293,63 +309,43 @@ func (v *webVocab) actor() (vocab.ActivityStreamsPerson, error) {
 func (v *webVocab) children() ([]*webVocab, error) {
 	// make sure we are dealing with an ap collection
 
-	var c vocab.ActivityStreamsOrderedCollectionPage
-	var ok bool
-
-	if c, ok = v.target.(vocab.ActivityStreamsOrderedCollectionPage); !ok {
-		return nil, fmt.Errorf("type=%v not a collection", fedutil.Type(v.target))
+	page, ok := v.target.(vocab.ActivityStreamsOrderedCollectionPage)
+	if !ok {
+		return nil, fmt.Errorf("type=%T not a supported collection", v.target)
 	}
 
 	// get the underlying items
 
-	items, err := fedutil.FetchOrGet(c)
+	vs, err := fedutil.FetchAll(page)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot dereference list")
+		return nil, errors.Wrap(err, "cannot fetch from collection")
 	}
 
 	// wrap all underlying objs
 
-	var ws []*webVocab
-
-	for _, item := range items {
-		if w, err := New(item); err != nil {
-			return nil, errors.Wrap(err, "cannot wrap retrieved list entry")
-		} else {
-			ws = append(ws, w.(*webVocab))
-		}
-	}
-
-	return ws, nil
+	return wraps(vs...)
 }
+
+//
+// XXX: functions above and below are the fucking same :(
+//
 
 func (v *webVocab) object() ([]*webVocab, error) {
 	// cast to activity; only activites are interesting to us
 
-	activity, ok := v.target.(vocab.ActivityStreamsCreate)
+	create, ok := v.target.(vocab.ActivityStreamsCreate)
 	if !ok {
-		return nil, fmt.Errorf("type=%v not an create activity", fedutil.Type(v.target))
+		return nil, fmt.Errorf("type=%T not an create activity", v.target)
 	}
 
-	// get the container
+	// get the underlying items
 
-	op := activity.GetActivityStreamsObject()
-	if op == nil {
-		return nil, errors.New("object property empty")
+	vs, err := fedutil.FetchAll(create.GetActivityStreamsObject())
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot fetch from collection")
 	}
 
-	// iterate over the container and wrap the individual items
+	// wrap all underlying objs
 
-	var ws []*webVocab
-
-	for it := op.Begin(); it != op.End(); it = it.Next() {
-		if obj, err := fedutil.FetchIter(it); err != nil {
-			return nil, err
-		} else if w, err := New(obj); err != nil {
-			return nil, err
-		} else {
-			ws = append(ws, w.(*webVocab))
-		}
-	}
-
-	return ws, nil
+	return wraps(vs...)
 }

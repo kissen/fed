@@ -53,34 +53,32 @@ func FetchString(addr string) (vocab.Type, error) {
 	}
 }
 
-// Fetch the items part of collection. If an item is already a vocab.Type,
-// simply return that item as-is as part of the returned slice. If it is
-// an IRI, go out to the network to retrieve it first. If a cached version
-// of a remote object is available, that one is returned instead as part
-// of the slice.
-func FetchOrGet(collection vocab.ActivityStreamsOrderedCollectionPage) (items []vocab.Type, err error) {
-	iprop := collection.GetActivityStreamsOrderedItems()
-	if iprop == nil {
-		return nil, errors.New("items property is nil")
-	}
-
-	for it := iprop.Begin(); it != iprop.End(); it = it.Next() {
-		if item, err := FetchIter(it); err != nil {
-			return nil, err
-		} else {
-			items = append(items, item)
-		}
-	}
-
-	return items, nil
-}
-
-func FetchIter(it IterEntry) (vocab.Type, error) {
+func FetchIterEntry(it IterEntry) (vocab.Type, error) {
 	if !it.HasAny() {
 		return nil, errors.New("no value present")
 	} else if it.IsIRI() {
 		return Fetch(it.GetIRI())
 	} else {
 		return it.GetType(), nil
+	}
+}
+
+func FetchIter(it Iter) (vs []vocab.Type, err error) {
+	for ; it != it.End(); it = it.Next() {
+		if v, err := FetchIterEntry(it); err != nil {
+			vs = append(vs, v)
+		} else {
+			return nil, err
+		}
+	}
+
+	return vs, err
+}
+
+func FetchAll(iterable interface{}) (vs []vocab.Type, err error) {
+	if it, err := Begin(iterable); err != nil {
+		return nil, err
+	} else {
+		return FetchIter(it)
 	}
 }

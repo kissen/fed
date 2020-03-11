@@ -20,7 +20,6 @@ iterator_types = (
     'ActivityStreamsBtoPropertyIterator',
     'ActivityStreamsCcPropertyIterator',
     'ActivityStreamsClosedPropertyIterator',
-    'ActivityStreamsContentPropertyIterator',
     'ActivityStreamsContextPropertyIterator',
     'ActivityStreamsFormerTypePropertyIterator',
     'ActivityStreamsGeneratorPropertyIterator',
@@ -30,62 +29,66 @@ iterator_types = (
     'ActivityStreamsInstrumentPropertyIterator',
     'ActivityStreamsItemsPropertyIterator',
     'ActivityStreamsLocationPropertyIterator',
-    'ActivityStreamsNamePropertyIterator',
     'ActivityStreamsObjectPropertyIterator',
     'ActivityStreamsOneOfPropertyIterator',
     'ActivityStreamsOrderedItemsPropertyIterator',
     'ActivityStreamsOriginPropertyIterator',
     'ActivityStreamsPreviewPropertyIterator',
-    'ActivityStreamsRelPropertyIterator',
     'ActivityStreamsRelationshipPropertyIterator',
     'ActivityStreamsResultPropertyIterator',
     'ActivityStreamsStreamsPropertyIterator',
-    'ActivityStreamsSummaryPropertyIterator',
     'ActivityStreamsTagPropertyIterator',
     'ActivityStreamsTargetPropertyIterator',
     'ActivityStreamsToPropertyIterator',
     'ActivityStreamsUrlPropertyIterator',
-    'JSONLDTypePropertyIterator',
     'W3IDSecurityV1PublicKeyPropertyIterator',
 )
 
 
+not_supported = (
+    'ActivityStreamsContentPropertyIterator',
+    'ActivityStreamsNamePropertyIterator',
+    'ActivityStreamsRelPropertyIterator',
+    'ActivityStreamsSummaryPropertyIterator',
+    'JSONLDTypePropertyIterator',
+)
+
+
 wrapper_template = '''
-    type iter_$ITER_TYPE struct {
-            p vocab.$BASE_TYPE
-            it vocab.$ITER_TYPE
-    }
+type iter_$ITER_TYPE struct {
+        p vocab.$BASE_TYPE
+        it vocab.$ITER_TYPE
+}
 
-    func (i iter_$ITER_TYPE) HasAny() bool {
-            return i.it.HasAny()
-    }
+func (i iter_$ITER_TYPE) HasAny() bool {
+        return i.it.HasAny()
+}
 
-    func (i iter_$ITER_TYPE) IsIRI() bool {
-            return i.it.IsIRI()
-    }
+func (i iter_$ITER_TYPE) IsIRI() bool {
+        return i.it.IsIRI()
+}
 
-    func (i iter_$ITER_TYPE) GetIRI() *url.URL {
-            return i.it.GetIRI()
-    }
+func (i iter_$ITER_TYPE) GetIRI() *url.URL {
+        return i.it.GetIRI()
+}
 
-    func (i iter_$ITER_TYPE) GetType() vocab.Type {
-            return i.it.GetType()
-    }
+func (i iter_$ITER_TYPE) GetType() vocab.Type {
+        return i.it.GetType()
+}
 
-    func (i iter_$ITER_TYPE) Next() Iter {
-            return iter_$ITER_TYPE{
-                    p: i.p,
-                    it: i.it.Next(),
-            }
-    }
+func (i iter_$ITER_TYPE) Next() Iter {
+        return iter_$ITER_TYPE{
+                p: i.p,
+                it: i.it.Next(),
+        }
+}
 
-    func (i iter_$ITER_TYPE) End() Iter {
-            return iter_$ITER_TYPE{
-                    p: i.p,
-                    it: i.p.End(),
-            }
-    }
-    '''
+func (i iter_$ITER_TYPE) End() Iter {
+        return iter_$ITER_TYPE{
+                p: i.p,
+                it: i.p.End(),
+        }
+}'''
 
 
 def emit_wrapper(itername: str):
@@ -115,7 +118,11 @@ def emit_constructor_for(itername: str):
 
 
 def emit_constructor():
-    print('func Begin(iterable vocab.Type) (Iter, error) {')
+    print('func Begin(iterable interface{}) (Iter, error) {')
+    print('if iterable == nil {')
+    print('	return nil, errors.New("nil argument")')
+    print('}')
+    print()
     print('	switch v := iterable.(type) {')
 
     for itername in iterator_types:
@@ -130,7 +137,11 @@ def emit_constructor():
 def emit_header():
     print('package fedutil')
     print()
+    print('// AUTO GENERATED')
+    print('// see iterator_impl.gen.py for details')
+    print()
     print('import (')
+    print('	"errors"')
     print('	"fmt"')
     print('	"github.com/go-fed/activity/streams/vocab"')
     print('	"net/url"')

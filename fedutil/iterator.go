@@ -32,5 +32,5 @@ type Iter interface {
 	IterEntry
 
 	Next() Iter
-	End()  Iter
+	End() Iter
 }
