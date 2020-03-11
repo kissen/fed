@@ -69,6 +69,9 @@ func New(target vocab.Type) (WebVocab, error) {
 	case vocab.ActivityStreamsPerson:
 		page = "res/person.fragment.tmpl"
 
+	case vocab.ActivityStreamsOrderedCollectionPage:
+		page = "res/ordered_collection_page.fragment.tmpl"
+
 	default:
 		log.Printf("type=%v not implemented", fedutil.Type(v))
 		page = "res/not_implemented.fragment.tmpl"
@@ -126,12 +129,23 @@ func (v *webVocab) Id() template.URL {
 	return URL(id)
 }
 
+// Return a human-readable string that identifies the author of this
+// object.
 func (v *webVocab) XFrom() string {
 	if author, err := v.qualifiedAuthor(); err != nil {
-		log.Println(err)
 		return "Anonymous"
 	} else {
 		return author
+	}
+}
+
+// If this object is some kind of collection, return the individual
+// items in this collection as wrapped elements.
+func (v *webVocab) XChildren() []*webVocab {
+	if cs, err := v.children(); err != nil {
+		return nil
+	} else {
+		return cs
 	}
 }
 
@@ -158,7 +172,7 @@ func (v *webVocab) qualifiedAuthor() (string, error) {
 
 	actor, err := v.actor()
 	if err != nil {
-		return "", errors.Wrap(err, "cannot identify author")
+		return "", errors.Wrapf(err, "cannot identify author of id=%v", id)
 	}
 
 	// find out how we should call them
@@ -211,7 +225,7 @@ func (v *webVocab) actor() (vocab.ActivityStreamsPerson, error) {
 	}
 
 	if addr == nil {
-		return nil, errors.New("cannot determine author")
+		return nil, errors.New("no known identifying field")
 	}
 
 	// look up the actor
@@ -228,4 +242,36 @@ func (v *webVocab) actor() (vocab.ActivityStreamsPerson, error) {
 	}
 
 	return person, nil
+}
+
+func (v *webVocab) children() ([]*webVocab, error) {
+	// make sure we are dealing with an ap collection
+
+	var c vocab.ActivityStreamsOrderedCollectionPage
+	var ok bool
+
+	if c, ok = v.target.(vocab.ActivityStreamsOrderedCollectionPage); !ok {
+		return nil, fmt.Errorf("type=%v not a collection", fedutil.Type(v.target))
+	}
+
+	// get the underlying items
+
+	items, err := fedutil.FetchOrGet(c)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot dereference list")
+	}
+
+	// wrap all underlying objs
+
+	var ws []*webVocab
+
+	for _, item := range items {
+		if w, err := New(item); err != nil {
+			return nil, errors.Wrap(err, "cannot wrap retrieved list entry")
+		} else {
+			ws = append(ws, w.(*webVocab))
+		}
+	}
+
+	return ws, nil
 }

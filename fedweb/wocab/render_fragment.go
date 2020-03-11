@@ -16,7 +16,6 @@ func renderFragement(page string, data interface{}) (template.HTML, error) {
 	// compile template
 
 	ts, err := template.ParseFiles(templates...)
-
 	if err != nil {
 		return "", errors.Wrapf(err, "parsing templates page=%v failed", page)
 	}
@@ -25,7 +24,7 @@ func renderFragement(page string, data interface{}) (template.HTML, error) {
 
 	buf := bytes.Buffer{}
 
-	if ts.Execute(&buf, data); err != nil {
+	if err := ts.Execute(&buf, data); err != nil {
 		return "", errors.Wrapf(err, "executing template page=%v failed", page)
 	}
 

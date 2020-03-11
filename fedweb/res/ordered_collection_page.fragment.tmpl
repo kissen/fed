@@ -1,21 +1,9 @@
-{{define "ordered_collection_page"}}
-        <div class="card">
-		<div class="warning">
-			<div class="cardmeta">
-				Anonymous
-			</div>
-
-			<div class="cardmain">
-				<p>Type <code>OrderedCollectionPage</code> not yet implemented.</p>
-			</div>
-		</div>
-	</div>
-
-	{{range .XIter}}
-		{{template "card" .}}
-	{{else}}
+{{range .XChildren}}
+       {{.Fragment}}
+{{else}}
+	<div class="card">
 		<p style="text-align: center; font-style: italic">
-			here be aliens
+			no entries in <code>{{.Id}}</code>
 		</p>
-	{{end}}
+	</div>
 {{end}}

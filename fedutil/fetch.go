@@ -4,25 +4,27 @@ import (
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/kissen/complcache"
 	"github.com/pkg/errors"
-	"net/url"
 	"log"
+	"net/url"
 	"time"
 )
 
-const _EXPIRATION = 30 * time.Second
-const _FILL = 15 * time.Second
-const _GC = 4 * time.Minute
+const _EXPIRATION = 2 * time.Second
+const _FILL = 10 * time.Second
+const _GC = 1 * time.Minute
 
 var fetchCache complcache.Cache
 
 func init() {
 	var err error
 
-	if fetchCache,err = complcache.New(_EXPIRATION, _FILL, _GC); err != nil {
+	if fetchCache, err = complcache.New(_EXPIRATION, _FILL, _GC); err != nil {
 		log.Panic("cannot create http cache:", err)
 	}
 }
 
+// Fetch the resource at iri. If a cached version of the resource at iri
+// is available, that one is returned instead.
 func Fetch(iri *url.URL) (vocab.Type, error) {
 	creator := func() (interface{}, error) {
 		if raw, err := Get(iri); err != nil {
@@ -41,10 +43,42 @@ func Fetch(iri *url.URL) (vocab.Type, error) {
 	}
 }
 
+// Fetch the resource at addr. If a cached version of the resource at addr
+// is available, that one is returned instead.
 func FetchString(addr string) (vocab.Type, error) {
 	if iri, err := url.Parse(addr); err != nil {
 		return nil, errors.Wrap(err, "bad address")
 	} else {
 		return Fetch(iri)
 	}
+}
+
+// Fetch the items part of collection. If an item is already a vocab.Type,
+// simply return that item as-is as part of the returned slice. If it is
+// an IRI, go out to the network to retrieve it first. If a cached version
+// of a remote object is available, that one is returned instead as part
+// of the slice.
+func FetchOrGet(collection vocab.ActivityStreamsOrderedCollectionPage) (items []vocab.Type, err error) {
+	iprop := collection.GetActivityStreamsOrderedItems()
+	if iprop == nil {
+		return nil, errors.New("items property is nil")
+	}
+
+	for it := iprop.Begin(); it != iprop.End(); it = it.Next() {
+		if it.IsIRI() {
+			if obj, err := Fetch(it.GetIRI()); err != nil {
+				return nil, err
+			} else {
+				items = append(items, obj)
+			}
+		} else {
+			if obj := it.GetType(); obj == nil {
+				return nil, errors.New("got nil object on non-iri type")
+			} else {
+				items = append(items, obj)
+			}
+		}
+	}
+
+	return items, err
 }

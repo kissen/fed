@@ -167,16 +167,11 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 
 	templates := []string{
 		page, "res/base.layout.tmpl", "res/card.fragment.tmpl",
-		"res/person.fragment.tmpl", "res/note.fragment.tmpl",
-		"res/ordered_collection.fragment.tmpl",
-		"res/ordered_collection_page.fragment.tmpl",
-		"res/not_implemented.fragment.tmpl",
 	}
 
 	// compile template
 
 	ts, err := template.ParseFiles(templates...)
-
 	if err != nil {
 		log.Printf("parsing templates failed: %v", err)
 		return
@@ -186,7 +181,7 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 
 	w.WriteHeader(status)
 
-	if ts.Execute(w, data); err != nil {
+	if err := ts.Execute(w, data); err != nil {
 		log.Printf("executing template failed: %v", err)
 		return
 	}
