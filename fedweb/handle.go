@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
+	"gitlab.cs.fau.de/kissen/fed/fedweb/wocab"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -23,30 +24,8 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 
 // Get /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
-	// set up fixed params
-
 	data := map[string]interface{}{
 		"Selected": "Stream",
-	}
-
-	// fetch single note
-	addr := "http://localhost:9999/ap/storage/6227b40e-1930-4ac3-beea-4fc81fc8bf5a"
-	user, err := Fetch(addr)
-	if err != nil {
-		Error(w, http.StatusInternalServerError, err, data)
-		return
-	}
-
-	userMap, err := fedutil.VocabToMap(user)
-	if err != nil {
-		Error(w, http.StatusInternalServerError, err, data)
-		return
-	}
-
-	// set up data dict and render
-
-	data["Items"] = []interface{}{
-		userMap,
 	}
 
 	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
@@ -94,7 +73,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 	// fetch and wrap object
 
-	wrapped, err := NewWebVocabOnline(iri)
+	wrapped, err := wocab.Fetch(iri)
 	if err != nil {
 		Error(w, http.StatusInternalServerError, err, nil)
 		return
@@ -103,9 +82,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 	// set up data dict and render
 
 	data := map[string]interface{}{
-		"Items": []interface{}{
-			wrapped,
-		},
+		"Item": wrapped,
 	}
 
 	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
@@ -169,7 +146,7 @@ func Error(w http.ResponseWriter, status int, cause error, data map[string]inter
 
 	// join with other generic keys; render
 
-	renderData := Sum(data, errorData)
+	renderData := fedutil.SumMaps(data, errorData)
 	Render(w, "res/error.page.tmpl", renderData, status)
 }
 

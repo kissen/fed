@@ -5,11 +5,5 @@
 {{end}}
 
 {{define "body"}}
-	{{range .Items}}
-		{{template "card" .}}
-	{{else}}
-		<p style="text-align: center; font-style: italic">
-			here be dragons
-		</p>
-	{{end}}
+	{{.Item.Fragment}}
 {{end}}
