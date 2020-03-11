@@ -65,20 +65,22 @@ func FetchOrGet(collection vocab.ActivityStreamsOrderedCollectionPage) (items []
 	}
 
 	for it := iprop.Begin(); it != iprop.End(); it = it.Next() {
-		if it.IsIRI() {
-			if obj, err := Fetch(it.GetIRI()); err != nil {
-				return nil, err
-			} else {
-				items = append(items, obj)
-			}
+		if item, err := FetchIter(it); err != nil {
+			return nil, err
 		} else {
-			if obj := it.GetType(); obj == nil {
-				return nil, errors.New("got nil object on non-iri type")
-			} else {
-				items = append(items, obj)
-			}
+			items = append(items, item)
 		}
 	}
 
-	return items, err
+	return items, nil
+}
+
+func FetchIter(it Iterator) (vocab.Type, error) {
+	if !it.HasAny() {
+		return nil, errors.New("no value present")
+	} else if it.IsIRI() {
+		return Fetch(it.GetIRI())
+	} else {
+		return it.GetType(), nil
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
+	"golang.org/x/sync/errgroup"
 	"html/template"
 	"log"
 	"net/url"
@@ -66,6 +67,9 @@ func New(target vocab.Type) (WebVocab, error) {
 	case vocab.ActivityStreamsNote:
 		page = "res/note.fragment.tmpl"
 
+	case vocab.ActivityStreamsCreate:
+		page = "res/create.fragment.tmpl"
+
 	case vocab.ActivityStreamsPerson:
 		page = "res/person.fragment.tmpl"
 
@@ -89,6 +93,26 @@ func New(target vocab.Type) (WebVocab, error) {
 	// return the now fully filled out struct
 
 	return wocab, nil
+}
+
+func News(targets ...vocab.Type) ([]WebVocab, error) {
+	group := &errgroup.Group{}
+	ws := make([]WebVocab, len(targets))
+
+	for i, target := range targets {
+		myi, mytarget := i, target
+
+		group.Go(func() error {
+			if w, err := New(mytarget); err != nil {
+				return err
+			} else {
+				ws[myi] = w
+				return nil
+			}
+		})
+	}
+
+	return ws, group.Wait()
 }
 
 // Fetch the ActivityPub object at iri and return a wraped version.
@@ -129,10 +153,21 @@ func (v *webVocab) Id() template.URL {
 	return URL(id)
 }
 
+func (v *webVocab) Name() template.HTML {
+	html := v.mapping("name")
+	return HTML(html)
+}
+
+func (v *webVocab) Content() template.HTML {
+	html := v.mapping("content")
+	return HTML(html)
+}
+
 // Return a human-readable string that identifies the author of this
 // object.
 func (v *webVocab) XFrom() string {
 	if author, err := v.qualifiedAuthor(); err != nil {
+		log.Println(err)
 		return "Anonymous"
 	} else {
 		return author
@@ -143,14 +178,25 @@ func (v *webVocab) XFrom() string {
 // items in this collection as wrapped elements.
 func (v *webVocab) XChildren() []*webVocab {
 	if cs, err := v.children(); err != nil {
+		log.Println(err)
 		return nil
 	} else {
 		return cs
 	}
 }
 
+func (v *webVocab) XObject() []*webVocab {
+	if obj, err := v.object(); err != nil {
+		log.Println(err)
+		return nil
+	} else {
+		return obj
+	}
+}
+
 func (v *webVocab) mapping(key string) string {
 	if s, ok := v.mappings[key].(string); !ok {
+		log.Printf("requested mappings[%v] but no such value exits", key)
 		return ""
 	} else {
 		return s
@@ -268,6 +314,38 @@ func (v *webVocab) children() ([]*webVocab, error) {
 	for _, item := range items {
 		if w, err := New(item); err != nil {
 			return nil, errors.Wrap(err, "cannot wrap retrieved list entry")
+		} else {
+			ws = append(ws, w.(*webVocab))
+		}
+	}
+
+	return ws, nil
+}
+
+func (v *webVocab) object() ([]*webVocab, error) {
+	// cast to activity; only activites are interesting to us
+
+	activity, ok := v.target.(vocab.ActivityStreamsCreate)
+	if !ok {
+		return nil, fmt.Errorf("type=%v not an create activity", fedutil.Type(v.target))
+	}
+
+	// get the container
+
+	op := activity.GetActivityStreamsObject()
+	if op == nil {
+		return nil, errors.New("object property empty")
+	}
+
+	// iterate over the container and wrap the individual items
+
+	var ws []*webVocab
+
+	for it := op.Begin(); it != op.End(); it = it.Next() {
+		if obj, err := fedutil.FetchIter(it); err != nil {
+			return nil, err
+		} else if w, err := New(obj); err != nil {
+			return nil, err
 		} else {
 			ws = append(ws, w.(*webVocab))
 		}
