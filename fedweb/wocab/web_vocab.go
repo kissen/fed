@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"net/url"
+	"time"
 )
 
 // Represents a wrapped instance of a vocab.Type object. WebVocab
@@ -156,27 +157,41 @@ func Fetch(target *url.URL) (WebVocab, error) {
 	return wocab, nil
 }
 
+// Return the HTML fragment.
 func (v *webVocab) Fragment() template.HTML {
 	return v.fragment
 }
 
+// Return the type property.
 func (v *webVocab) Type() string {
 	return v.mapping("type")
 }
 
+// Return the id, that is the IRI pointing to the wrapped element.
 func (v *webVocab) Id() template.URL {
 	id := v.mapping("id")
 	return URL(id)
 }
 
+// Return the name property.
 func (v *webVocab) Name() template.HTML {
 	html := v.mapping("name")
 	return HTML(html)
 }
 
+// Return the content property.
 func (v *webVocab) Content() template.HTML {
 	html := v.mapping("content")
 	return HTML(html)
+}
+
+// Return the published timestamp.
+func (v *webVocab) Published() string {
+	if t, err := time.Parse(time.RFC3339, v.mapping("published")); err != nil {
+		return ""
+	} else {
+		return t.Format("2006/01/02 15:04")
+	}
 }
 
 // Return a human-readable string that identifies the author of this

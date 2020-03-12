@@ -98,6 +98,10 @@ main > h1 {
     margin-bottom: 0.5em;
 }
 
+.card a {
+    color: var(--accent-ink);
+}
+
 .card:hover {
     background-color: var(--accent-shadow);
 }
