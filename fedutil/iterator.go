@@ -1,6 +1,7 @@
 package fedutil
 
 import (
+	"errors"
 	"github.com/go-fed/activity/streams/vocab"
 	"net/url"
 )
@@ -33,4 +34,22 @@ type Iter interface {
 
 	Next() Iter
 	End() Iter
+}
+
+// Return a generic iterator if iterable is actually iterable or some
+// error if it is no. I wish I knew of a better way short of writing
+// my own lib.
+func Begin(iterable interface{}) (Iter, error) {
+	if iterable == nil {
+		return nil, errors.New("nil argument")
+	}
+
+	switch v := iterable.(type) {
+	case vocab.ActivityStreamsOrderedCollectionPage:
+		items := v.GetActivityStreamsOrderedItems()
+		return begin(items)
+
+	default:
+		return begin(iterable)
+	}
 }

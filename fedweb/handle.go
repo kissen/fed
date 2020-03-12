@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
@@ -70,6 +71,20 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	iri.Path = strings.TrimLeft(iri.Path, "/")
+
+	// re-add query params for the remote if there were any
+
+	s := iri.String()
+
+	for key, value := range r.URL.Query() {
+		s += fmt.Sprintf("?%v=%v", key, value[0])
+	}
+
+	iri, err = url.Parse(s)
+	if err != nil {
+		Error(w, http.StatusInternalServerError, err, nil)
+		return
+	}
 
 	// fetch and wrap object
 

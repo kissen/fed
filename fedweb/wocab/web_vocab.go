@@ -307,45 +307,28 @@ func (v *webVocab) actor() (vocab.ActivityStreamsPerson, error) {
 }
 
 func (v *webVocab) children() ([]*webVocab, error) {
-	// make sure we are dealing with an ap collection
-
-	page, ok := v.target.(vocab.ActivityStreamsOrderedCollectionPage)
-	if !ok {
-		return nil, fmt.Errorf("type=%T not a supported collection", v.target)
-	}
-
-	// get the underlying items
-
-	vs, err := fedutil.FetchAll(page.GetActivityStreamsOrderedItems())
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot fetch from collection")
-	}
-
-	// wrap all underlying objs
-
-	return wraps(vs...)
+	return v.wrapAll(v.target)
 }
 
-//
-// XXX: functions above and below are the fucking same :(
-//
-
 func (v *webVocab) object() ([]*webVocab, error) {
-	// cast to activity; only activites are interesting to us
-
-	create, ok := v.target.(vocab.ActivityStreamsCreate)
-	if !ok {
-		return nil, fmt.Errorf("type=%T not an create activity", v.target)
+	type objecter interface {
+		GetActivityStreamsObject() vocab.ActivityStreamsObjectProperty
 	}
 
-	// get the underlying items
+	if o, ok := v.target.(objecter); !ok {
+		return nil, fmt.Errorf("%T doesn't have object property", v.target)
+	} else {
+		items := o.GetActivityStreamsObject()
+		return v.wrapAll(items)
+	}
+}
 
-	vs, err := fedutil.FetchAll(create.GetActivityStreamsObject())
-	if err != nil {
+// Iterate over property (with fedutil.Begin) and wrap all returned
+// objects.
+func (v *webVocab) wrapAll(property interface{}) ([]*webVocab, error) {
+	if vs, err := fedutil.FetchAll(property); err != nil {
 		return nil, errors.Wrap(err, "cannot fetch from collection")
+	} else {
+		return wraps(vs...)
 	}
-
-	// wrap all underlying objs
-
-	return wraps(vs...)
 }

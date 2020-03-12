@@ -10,7 +10,7 @@ import (
 	"net/url"
 )
 
-func Begin(iterable interface{}) (Iter, error) {
+func begin(iterable interface{}) (Iter, error) {
 	if iterable == nil {
 		return nil, errors.New("nil argument")
 	}

@@ -118,7 +118,7 @@ def emit_constructor_for(itername: str):
 
 
 def emit_constructor():
-    print('func Begin(iterable interface{}) (Iter, error) {')
+    print('func begin(iterable interface{}) (Iter, error) {')
     print('if iterable == nil {')
     print('	return nil, errors.New("nil argument")')
     print('}')
@@ -158,5 +158,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except (KeyboardInterrupt, SystemExit):
+    except (BrokenPipeError, KeyboardInterrupt, SystemExit):
         pass
