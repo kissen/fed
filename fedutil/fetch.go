@@ -64,11 +64,13 @@ func FetchIterEntry(it IterEntry) (vocab.Type, error) {
 }
 
 func FetchIter(it Iter) (vs []vocab.Type, err error) {
+	log.Println("FetchIter()")
+
 	for ; it != it.End(); it = it.Next() {
 		if v, err := FetchIterEntry(it); err != nil {
-			vs = append(vs, v)
-		} else {
 			return nil, err
+		} else {
+			vs = append(vs, v)
 		}
 	}
 

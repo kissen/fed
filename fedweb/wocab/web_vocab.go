@@ -316,7 +316,7 @@ func (v *webVocab) children() ([]*webVocab, error) {
 
 	// get the underlying items
 
-	vs, err := fedutil.FetchAll(page)
+	vs, err := fedutil.FetchAll(page.GetActivityStreamsOrderedItems())
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot fetch from collection")
 	}
