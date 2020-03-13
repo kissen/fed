@@ -108,7 +108,7 @@ main > h1 {
 }
 
 .cardmain {
-    padding: 0 4pt 4pt 14pt;
+    padding: 4pt 14pt 4pt 14pt;
 }
 
 .name {
@@ -119,11 +119,25 @@ main > h1 {
 }
 
 .cardfooter {
-    text-align: right;
     font-size: var(--small);
     padding: 0 4pt 10pt 14pt;
+    text-align: right;
 }
 
 .svgbutton {
     padding-right: 2.5em;
+}
+
+/*
+ * submit fields
+ */
+
+.submit {
+    background: transparent;
+    border: none;
+    color: var(--accent-ink);
+    font-size: var(--medium);
+    font-style: italic;
+    resize: none;
+    width: 100%;
 }

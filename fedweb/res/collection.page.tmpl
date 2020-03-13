@@ -5,5 +5,18 @@
 {{end}}
 
 {{define "body"}}
+	<div class="card">
+		<div class="cardmain">
+			<form action="/submit" method="post">
+				<textarea oninput="SubmitInput()" id="submit" class="submit" autocomplete="off" placeholder="What are you thinking about?"></textarea>
+			</form>
+		</div>
+
+		<div class="cardfooter">
+			<img class="svgbutton" src="/static/send.svg">
+		</div>
+
+	</div>
+
 	{{.Item.Fragment}}
 {{end}}

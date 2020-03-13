@@ -97,4 +97,4 @@ licensed under the following terms.
 The affected files are
 
 	like-active.svg  like.svg  repeat-active.svg  repeat.svg
-	reply-active.svg  reply.svg
+	reply-active.svg  reply.svg external.svg send.svg inbox.svg
