@@ -166,7 +166,7 @@ func Error(w http.ResponseWriter, status int, cause error, data map[string]inter
 }
 
 func Render(w http.ResponseWriter, page string, data map[string]interface{}, status int) {
-	// fill in required fiels in data
+	// fill in required fields that need to have some well defined values
 
 	required := []string{
 		"Selected",
@@ -177,6 +177,10 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 			data[key] = ""
 		}
 	}
+
+	// fill in values that are (almost) always needed
+
+	data["SubmitPrompt"] = SubmitPrompt()
 
 	// load template files
 

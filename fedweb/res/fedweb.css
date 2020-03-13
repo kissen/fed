@@ -136,6 +136,7 @@ main > h1 {
     background: transparent;
     border: none;
     color: var(--accent-ink);
+    font-family: "Open Sans", Helvetica, Arial, sans-serif;
     font-size: var(--medium);
     font-style: italic;
     resize: none;
