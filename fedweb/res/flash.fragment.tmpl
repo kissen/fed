@@ -1,0 +1,29 @@
+{{define "flash"}}
+	{{range .FlashContext.Flashs}}
+		<div class="card">
+			<div class="cardmain">
+				{{.}}
+			</div>
+		</div>
+	{{end}}
+
+	{{range .FlashContext.Warnings}}
+		<div class="card">
+			<div class="warning">
+				<div class="cardmain">
+					{{.}}
+				</div>
+			</div>
+		</div>
+	{{end}}
+
+	{{range .FlashContext.Errors}}
+		<div class="card">
+			<div class="error">
+				<div class="cardmain">
+					{{.}}
+				</div>
+			</div>
+		</div>
+	{{end}}
+{{end}}

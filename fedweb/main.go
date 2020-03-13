@@ -18,6 +18,9 @@ func listenAndServe() {
 	router.HandleFunc("/login", PostLogin).Methods("POST")
 	router.HandleFunc("/remote/{remotepath:.+}", GetRemote).Methods("GET")
 	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
+	router.HandleFunc("/submit", PostSubmit).Methods("POST")
+
+	router.Use(AddFlashContext)
 
 	router.NotFoundHandler = http.HandlerFunc(HandleNotFound)
 	router.MethodNotAllowedHandler = http.HandlerFunc(HandleMethodNotAllowed)

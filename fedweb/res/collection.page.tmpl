@@ -6,15 +6,15 @@
 
 {{define "body"}}
 	<div class="card">
-		<div class="cardmain">
-			<form action="/submit" method="post">
-				<textarea oninput="SubmitInput()" id="submit" class="submit" autocomplete="off" placeholder="{{.SubmitPrompt}}"></textarea>
-			</form>
-		</div>
+		<form action="/submit" method="post">
+			<div class="cardmain">
+					<textarea oninput="PostInput()" id="postinput" class="postinput" name="postinput" autocomplete="off" placeholder="{{.SubmitPrompt}}"></textarea>
+			</div>
 
-		<div class="cardfooter">
-			<img class="svgbutton" src="/static/send.svg">
-		</div>
+			<div class="cardfooter">
+				<input class="svgbutton" type="image" src="/static/send.svg" alt="Send" />
+			</div>
+		</form>
 
 	</div>
 

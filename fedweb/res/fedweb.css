@@ -125,14 +125,19 @@ main > h1 {
 }
 
 .svgbutton {
-    padding-right: 2.5em;
+    margin-right: 2.5em;
+    padding: 4pt;
+}
+
+.svgbutton:hover {
+    background-color: var(--accent-shadow);
 }
 
 /*
  * submit fields
  */
 
-.submit {
+.postinput {
     background: transparent;
     border: none;
     color: var(--accent-ink);

@@ -23,42 +23,43 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 	http.RedirectHandler("stream", http.StatusFound).ServeHTTP(w, r)
 }
 
-// Get /stream
+// GET /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Selected": "Stream",
 	}
 
-	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
-// Get /liked
+// GET /liked
 func GetLiked(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Selected": "Liked",
 	}
 
-	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
-// Get /following
+// GET /following
 func GetFollowing(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Selected": "Following",
 	}
 
-	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
-// Get /followers
+// GET /followers
 func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	data := map[string]interface{}{
 		"Selected": "Followers",
 	}
 
-	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
+// GET /remote
 func GetRemote(w http.ResponseWriter, r *http.Request) {
 	// get and sanitize iri
 
@@ -66,7 +67,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 	iri, err := url.Parse(query)
 	if err != nil {
-		Error(w, http.StatusBadRequest, err, nil)
+		Error(w, r, http.StatusBadRequest, err, nil)
 		return
 	}
 
@@ -82,7 +83,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 	iri, err = url.Parse(s)
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err, nil)
+		Error(w, r, http.StatusInternalServerError, err, nil)
 		return
 	}
 
@@ -90,7 +91,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 	wrapped, err := wocab.Fetch(iri)
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err, nil)
+		Error(w, r, http.StatusInternalServerError, err, nil)
 		return
 	}
 
@@ -100,17 +101,17 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 		"Item": wrapped,
 	}
 
-	Render(w, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
 }
 
 // GET /login
 func GetLogin(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotImplemented, nil, nil)
+	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // POST /login
 func PostLogin(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotImplemented, nil, nil)
+	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // GET /static/*
@@ -134,19 +135,25 @@ func GetStatic(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /submit
+func PostSubmit(w http.ResponseWriter, r *http.Request) {
+	post := r.PostFormValue("postinput")
+	log.Printf("post=%v", post)
+}
+
 // Handler for Not Found Errors
 func HandleNotFound(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusNotFound, nil, nil)
+	Error(w, r, http.StatusNotFound, nil, nil)
 }
 
 // Handler for Method Not Allowed Errors
 func HandleMethodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	Error(w, http.StatusMethodNotAllowed, nil, nil)
+	Error(w, r, http.StatusMethodNotAllowed, nil, nil)
 }
 
 // Write out the Error template with given status and cause.
 // cause may be left nil.
-func Error(w http.ResponseWriter, status int, cause error, data map[string]interface{}) {
+func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data map[string]interface{}) {
 	// set up data for the error handler
 
 	errorData := map[string]interface{}{
@@ -162,10 +169,10 @@ func Error(w http.ResponseWriter, status int, cause error, data map[string]inter
 	// join with other generic keys; render
 
 	renderData := fedutil.SumMaps(data, errorData)
-	Render(w, "res/error.page.tmpl", renderData, status)
+	Render(w, r, "res/error.page.tmpl", renderData, status)
 }
 
-func Render(w http.ResponseWriter, page string, data map[string]interface{}, status int) {
+func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}, status int) {
 	// fill in required fields that need to have some well defined values
 
 	required := []string{
@@ -181,11 +188,13 @@ func Render(w http.ResponseWriter, page string, data map[string]interface{}, sta
 	// fill in values that are (almost) always needed
 
 	data["SubmitPrompt"] = SubmitPrompt()
+	data["FlashContext"] = GetFlashContext(r)
 
 	// load template files
 
 	templates := []string{
 		page, "res/base.layout.tmpl", "res/card.fragment.tmpl",
+		"res/flash.fragment.tmpl",
 	}
 
 	// compile template
