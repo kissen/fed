@@ -102,18 +102,12 @@ main > h1 {
     color: var(--accent-ink);
 }
 
-.card:hover {
-    background-color: var(--accent-shadow);
-}
-
-.cardmeta {
+.cardheader {
     font-size: var(--small);
-    padding-left: -20pt;
     padding: 4pt 4pt 0 4pt;
 }
 
 .cardmain {
-    padding-left: -20pt;
     padding: 0 4pt 4pt 14pt;
 }
 
@@ -122,4 +116,14 @@ main > h1 {
 }
 
 .content {
+}
+
+.cardfooter {
+    text-align: right;
+    font-size: var(--small);
+    padding: 0 4pt 10pt 14pt;
+}
+
+.svgbutton {
+    padding-right: 2.5em;
 }
