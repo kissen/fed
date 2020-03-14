@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
@@ -21,11 +20,15 @@ import (
 
 // GET /
 func GetIndex(w http.ResponseWriter, r *http.Request) {
-	http.RedirectHandler("stream", http.StatusFound).ServeHTTP(w, r)
+	log.Printf("GetIndex(%v)", r.URL)
+
+	GetStream(w, r)
 }
 
 // GET /stream
 func GetStream(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetStream(%v)", r.URL)
+
 	data := map[string]interface{}{
 		"Selected": "Stream",
 	}
@@ -35,6 +38,8 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 
 // GET /liked
 func GetLiked(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetLiked(%v)", r.URL)
+
 	data := map[string]interface{}{
 		"Selected": "Liked",
 	}
@@ -44,6 +49,8 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 
 // GET /following
 func GetFollowing(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetFollowing(%v)", r.URL)
+
 	data := map[string]interface{}{
 		"Selected": "Following",
 	}
@@ -53,6 +60,8 @@ func GetFollowing(w http.ResponseWriter, r *http.Request) {
 
 // GET /followers
 func GetFollowers(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetFollowers(%v)", r.URL)
+
 	data := map[string]interface{}{
 		"Selected": "Followers",
 	}
@@ -62,6 +71,8 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 
 // GET /remote
 func GetRemote(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetRemote(%v)", r.URL)
+
 	// get and sanitize iri
 
 	query := mux.Vars(r)["remotepath"]
@@ -107,16 +118,22 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 // GET /login
 func GetLogin(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetLogin(%v)", r.URL)
+
 	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // POST /login
 func PostLogin(w http.ResponseWriter, r *http.Request) {
+	log.Printf("PostLogin(%v)", r.URL)
+
 	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // GET /static/*
 func GetStatic(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetStatic(%v)", r.URL)
+
 	name := path.Base(r.URL.Path)
 	relpath := filepath.Join("res", name)
 
@@ -138,19 +155,23 @@ func GetStatic(w http.ResponseWriter, r *http.Request) {
 
 // POST /submit
 func PostSubmit(w http.ResponseWriter, r *http.Request) {
-	// XXX: we should just post to any site so we can
-	// show a pretty message with flash...
+	contents := strings.TrimSpace(r.FormValue("postinput"))
 
-	ref := r.Referer()
+	if len(contents) == 0 {
+		Status(r, http.StatusBadRequest)
+		FlashError(r, "cowardly refusing to create an empty note")
 
-	post := r.FormValue("postinput")
-
-	log.Printf("ref=%v post=%v", ref, post)
-
-	if len(post) == 0 {
-		err := errors.New("missing input")
-		Error(w, r, http.StatusNotImplemented, err, nil)
+		http.Redirect(w, r, r.Referer(), http.StatusBadRequest)
 	}
+
+	/*
+		log.Printf("ref=%v post=%v", ref, post)
+
+		if len(post) == 0 {
+			err := errors.New("missing input")
+			Error(w, r, http.StatusNotImplemented, err, nil)
+		}
+	*/
 }
 
 // Handler for Not Found Errors

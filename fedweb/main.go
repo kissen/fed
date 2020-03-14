@@ -25,6 +25,7 @@ func listenAndServe() {
 	router.MethodNotAllowedHandler = router.NewRoute().HandlerFunc(HandleMethodNotAllowed).GetHandler()
 
 	router.Use(AddFlashContext)
+	router.Use(AddRouterContext(router))
 	router.Use(AddStatusContext)
 
 	addr := ":8080"

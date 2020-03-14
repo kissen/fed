@@ -22,12 +22,15 @@ func (sc StatusContext) Status() int {
 
 func AddStatusContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sc := &StatusContext{
-			status: _STATUS_UNSET,
+		if r.Context().Value(_STATUS_CONTEXT_KEY) == nil {
+			sc := &StatusContext{
+				status: _STATUS_UNSET,
+			}
+			c := context.WithValue(r.Context(), _STATUS_CONTEXT_KEY, sc)
+			r = r.WithContext(c)
 		}
-		c := context.WithValue(r.Context(), _STATUS_CONTEXT_KEY, sc)
-		q := r.WithContext(c)
-		next.ServeHTTP(w, q)
+
+		next.ServeHTTP(w, r)
 	})
 }
 
