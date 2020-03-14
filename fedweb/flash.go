@@ -23,7 +23,15 @@ func AddFlashContext(next http.Handler) http.Handler {
 }
 
 func GetFlashContext(r *http.Request) *FlashContext {
-	return r.Context().Value(_FLASH_CONTEXT_KEY).(*FlashContext)
+	// on errors, we don't have flashes; in fact the middleware
+	// isn't even called on errors; see
+	// https://github.com/gorilla/mux/issues/416 for more details
+
+	if fc := r.Context().Value(_FLASH_CONTEXT_KEY); fc == nil {
+		return &FlashContext{}
+	} else {
+		return fc.(*FlashContext)
+	}
 }
 
 func Flash(r *http.Request, s string) {
