@@ -41,6 +41,8 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 func GetLiked(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetLiked(%v)", r.URL)
 
+	Flash(r, "yes")
+
 	data := map[string]interface{}{
 		"Selected": "Liked",
 	}
@@ -214,7 +216,7 @@ func Render(w http.ResponseWriter, r *http.Request, page string, data map[string
 	// fill in values that are (almost) always needed
 
 	data["SubmitPrompt"] = SubmitPrompt()
-	data["FlashContext"] = GetFlashContext(r)
+	data["Context"] = Context(r)
 
 	// load template files
 
@@ -233,7 +235,7 @@ func Render(w http.ResponseWriter, r *http.Request, page string, data map[string
 
 	// write http status
 
-	status := GetStatusContext(r).Status()
+	status := Context(r).Status
 	w.WriteHeader(status)
 
 	// write body

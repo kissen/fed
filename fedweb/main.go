@@ -24,8 +24,7 @@ func listenAndServe() {
 	router.NotFoundHandler = router.NewRoute().HandlerFunc(HandleNotFound).GetHandler()
 	router.MethodNotAllowedHandler = router.NewRoute().HandlerFunc(HandleMethodNotAllowed).GetHandler()
 
-	router.Use(AddFlashContext)
-	router.Use(AddStatusContext)
+	router.Use(AddContext)
 
 	addr := ":8080"
 	log.Printf("starting on addr=%v...", addr)
