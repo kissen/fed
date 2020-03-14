@@ -227,7 +227,6 @@ func (v *webVocab) XObject() []*webVocab {
 
 func (v *webVocab) mapping(key string) string {
 	if s, ok := v.mappings[key].(string); !ok {
-		log.Printf("requested mappings[%v] but no such value exits", key)
 		return ""
 	} else {
 		return s

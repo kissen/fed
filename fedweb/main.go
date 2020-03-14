@@ -20,10 +20,12 @@ func listenAndServe() {
 	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
 	router.HandleFunc("/submit", PostSubmit).Methods("POST")
 
-	router.Use(AddFlashContext)
+	// https://github.com/gorilla/mux/issues/416
+	router.NotFoundHandler = router.NewRoute().HandlerFunc(HandleNotFound).GetHandler()
+	router.MethodNotAllowedHandler = router.NewRoute().HandlerFunc(HandleMethodNotAllowed).GetHandler()
 
-	router.NotFoundHandler = http.HandlerFunc(HandleNotFound)
-	router.MethodNotAllowedHandler = http.HandlerFunc(HandleMethodNotAllowed)
+	router.Use(AddFlashContext)
+	router.Use(AddStatusContext)
 
 	addr := ":8080"
 	log.Printf("starting on addr=%v...", addr)

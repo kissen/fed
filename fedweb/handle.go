@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
@@ -29,7 +30,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Stream",
 	}
 
-	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data)
 }
 
 // GET /liked
@@ -38,7 +39,7 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Liked",
 	}
 
-	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data)
 }
 
 // GET /following
@@ -47,7 +48,7 @@ func GetFollowing(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Following",
 	}
 
-	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data)
 }
 
 // GET /followers
@@ -56,7 +57,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		"Selected": "Followers",
 	}
 
-	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data)
 }
 
 // GET /remote
@@ -101,7 +102,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 		"Item": wrapped,
 	}
 
-	Render(w, r, "res/collection.page.tmpl", data, http.StatusOK)
+	Render(w, r, "res/collection.page.tmpl", data)
 }
 
 // GET /login
@@ -137,8 +138,19 @@ func GetStatic(w http.ResponseWriter, r *http.Request) {
 
 // POST /submit
 func PostSubmit(w http.ResponseWriter, r *http.Request) {
-	post := r.PostFormValue("postinput")
-	log.Printf("post=%v", post)
+	// XXX: we should just post to any site so we can
+	// show a pretty message with flash...
+
+	ref := r.Referer()
+
+	post := r.FormValue("postinput")
+
+	log.Printf("ref=%v post=%v", ref, post)
+
+	if len(post) == 0 {
+		err := errors.New("missing input")
+		Error(w, r, http.StatusNotImplemented, err, nil)
+	}
 }
 
 // Handler for Not Found Errors
@@ -166,13 +178,14 @@ func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data
 		errorData["Cause"] = cause.Error()
 	}
 
-	// join with other generic keys; render
-
 	renderData := fedutil.SumMaps(data, errorData)
-	Render(w, r, "res/error.page.tmpl", renderData, status)
+
+	// render with correct status
+	Status(r, status)
+	Render(w, r, "res/error.page.tmpl", renderData)
 }
 
-func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}, status int) {
+func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}) {
 	// fill in required fields that need to have some well defined values
 
 	required := []string{
@@ -205,9 +218,12 @@ func Render(w http.ResponseWriter, r *http.Request, page string, data map[string
 		return
 	}
 
-	// write http response
+	// write http status
 
+	status := GetStatusContext(r).Status()
 	w.WriteHeader(status)
+
+	// write body
 
 	if err := ts.Execute(w, data); err != nil {
 		log.Printf("executing template failed: %v", err)
