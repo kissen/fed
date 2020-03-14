@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
@@ -158,20 +159,11 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 	contents := strings.TrimSpace(r.FormValue("postinput"))
 
 	if len(contents) == 0 {
-		Status(r, http.StatusBadRequest)
-		FlashError(r, "cowardly refusing to create an empty note")
-
-		http.Redirect(w, r, r.Referer(), http.StatusBadRequest)
+		Error(w, r, http.StatusBadRequest, errors.New("empty note"), nil)
+		return
 	}
 
-	/*
-		log.Printf("ref=%v post=%v", ref, post)
-
-		if len(post) == 0 {
-			err := errors.New("missing input")
-			Error(w, r, http.StatusNotImplemented, err, nil)
-		}
-	*/
+	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // Handler for Not Found Errors
