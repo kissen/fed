@@ -427,6 +427,10 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 	liked.SetIRI(LikedIRI(c, user.Name).URL())
 	actor.SetActivityStreamsLiked(liked)
 
+	likes := streams.NewActivityStreamsLikesProperty()
+	likes.SetIRI(LikedIRI(c, user.Name).URL())
+	actor.SetActivityStreamsLiked(liked)
+
 	return actor, nil
 }
 
