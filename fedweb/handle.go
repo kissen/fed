@@ -18,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // GET /
@@ -173,6 +174,10 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 	content := streams.NewActivityStreamsContentProperty()
 	content.AppendXMLSchemaString(payload)
 	note.SetActivityStreamsContent(content)
+
+	published := streams.NewActivityStreamsPublishedProperty()
+	published.Set(time.Now())
+	note.SetActivityStreamsPublished(published)
 
 	// post it to the server
 
