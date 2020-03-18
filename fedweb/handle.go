@@ -31,46 +31,32 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 func GetStream(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStream(%v)", r.URL)
 
-	data := map[string]interface{}{
-		"Selected": "Stream",
-	}
-
-	Render(w, r, "res/collection.page.tmpl", data)
+	Selected(r, "Stream")
+	Render(w, r, "res/collection.page.tmpl", nil)
 }
 
 // GET /liked
 func GetLiked(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetLiked(%v)", r.URL)
 
-	Flash(r, "yes")
-
-	data := map[string]interface{}{
-		"Selected": "Liked",
-	}
-
-	Render(w, r, "res/collection.page.tmpl", data)
+	Selected(r, "Liked")
+	Render(w, r, "res/collection.page.tmpl", nil)
 }
 
 // GET /following
 func GetFollowing(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetFollowing(%v)", r.URL)
 
-	data := map[string]interface{}{
-		"Selected": "Following",
-	}
-
-	Render(w, r, "res/collection.page.tmpl", data)
+	Selected(r, "Following")
+	Render(w, r, "res/collection.page.tmpl", nil)
 }
 
 // GET /followers
 func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetFollowers(%v)", r.URL)
 
-	data := map[string]interface{}{
-		"Selected": "Followers",
-	}
-
-	Render(w, r, "res/collection.page.tmpl", data)
+	Selected(r, "Followers")
+	Render(w, r, "res/collection.page.tmpl", nil)
 }
 
 // GET /remote
@@ -237,20 +223,9 @@ func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data
 }
 
 func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}) {
-	// fill in required fields that need to have some well defined values
-
-	required := []string{
-		"Selected",
-	}
-
-	for _, key := range required {
-		if _, found := data[key]; !found {
-			data[key] = ""
-		}
-	}
-
 	// fill in values that are (almost) always needed
 
+	data = fedutil.SumMaps(data)
 	data["SubmitPrompt"] = SubmitPrompt()
 	data["Context"] = Context(r)
 
