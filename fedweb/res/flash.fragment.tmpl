@@ -1,8 +1,10 @@
 {{define "flash"}}
 	{{range .Context.Flashs}}
 		<div class="card">
-			<div class="cardmain">
-				{{.}}
+			<div class="flash">
+				<div class="cardmain">
+					{{.}}
+				</div>
 			</div>
 		</div>
 	{{end}}
@@ -10,8 +12,12 @@
 	{{range .Context.Warnings}}
 		<div class="card">
 			<div class="warning">
-				<div class="cardmain">
-					{{.}}
+				<div class="flash">
+					<div class="cardmain">
+						<img src="/static/warning.svg">
+						{{.}}
+						<img src="/static/warning.svg">
+					</div>
 				</div>
 			</div>
 		</div>
@@ -20,8 +26,12 @@
 	{{range .Context.Errors}}
 		<div class="card">
 			<div class="error">
-				<div class="cardmain">
-					{{.}}
+				<div class="flash">
+					<div class="cardmain">
+						<img src="/static/error.svg">
+						{{.}}
+						<img src="/static/error.svg">
+					</div>
 				</div>
 			</div>
 		</div>

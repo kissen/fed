@@ -89,6 +89,19 @@ main > h1 {
 }
 
 /*
+ * styling of flashes
+ */
+
+.flash {
+    text-align: center;
+}
+
+.flash img {
+    vertical-align: middle;
+    height: var(--medium);
+}
+
+/*
  * styling of the individual content cards and their fields
  */
 

@@ -167,7 +167,10 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 	payload := strings.TrimSpace(r.FormValue("postinput"))
 
 	if len(payload) == 0 {
-		Error(w, r, http.StatusBadRequest, errors.New("empty note"), nil)
+		FlashWarning(r, "cowardly refusing to create an empty note")
+		Status(r, http.StatusBadRequest)
+
+		GetStream(w, r)
 		return
 	}
 

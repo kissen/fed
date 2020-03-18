@@ -94,7 +94,8 @@ licensed under the following terms.
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 
-The affected files are
+The affected files, some of which were modified, are
 
 	like-active.svg  like.svg  repeat-active.svg  repeat.svg
 	reply-active.svg  reply.svg external.svg send.svg inbox.svg
+	warning.svg error.svg
