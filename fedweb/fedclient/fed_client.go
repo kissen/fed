@@ -12,6 +12,10 @@ type FedClient interface {
 	// Return the clients actor IRI.
 	IRI() *url.URL
 
+	// Return the stream iterator. Stream is a combination of both
+	// inbox and outbox.
+	Stream() (fedutil.Iter, error)
+
 	// Return an iterator of the users inbox.
 	Inbox() (fedutil.Iter, error)
 
@@ -80,6 +84,20 @@ func New(actorAddr string) (_ FedClient, err error) {
 
 func (fc *fedclient) IRI() *url.URL {
 	return fc.iri
+}
+
+func (fc *fedclient) Stream() (fedutil.Iter, error) {
+	in, err := fc.Inbox()
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := fc.Outbox()
+	if err != nil {
+		return nil, err
+	}
+
+	return fedutil.Begins(in, out)
 }
 
 func (fc *fedclient) Inbox() (fedutil.Iter, error) {

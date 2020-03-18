@@ -32,23 +32,37 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 func GetStream(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStream(%v)", r.URL)
 
-	if c := Context(r).Client; c == nil {
+	Selected(r, "Stream")
+
+	// get client; if we are not signed in stream does not make any sense
+
+	client := Context(r).Client
+	if client == nil {
 		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
-	} else {
-		Selected(r, "Stream")
-		Remote(w, r, http.StatusOK, c.InboxIRI())
+		return
 	}
+
+	// render out the collection
+
+	stream, err := client.Stream()
+	if err != nil {
+		Error(w, r, http.StatusBadGateway, err, nil)
+		return
+	}
+
+	Iter(w, r, stream)
 }
 
 // GET /liked
 func GetLiked(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetLiked(%v)", r.URL)
 
+	Selected(r, "Liked")
+
 	if c := Context(r).Client; c == nil {
 		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
 	} else {
-		Selected(r, "Liked")
-		Remote(w, r, http.StatusOK, c.LikedIRI())
+		Remote(w, r, c.LikedIRI())
 	}
 }
 
@@ -100,7 +114,7 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 
 	// let our friend Remote take care of it
 
-	Remote(w, r, http.StatusOK, iri)
+	Remote(w, r, iri)
 }
 
 // GET /login
@@ -224,19 +238,48 @@ func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data
 }
 
 // Write out a page showing remote content at addr.
-func Remote(w http.ResponseWriter, r *http.Request, status int, iri *url.URL) {
+func Remote(w http.ResponseWriter, r *http.Request, iri *url.URL) {
 	// fetch and wrap object
 
 	wrapped, err := wocab.Fetch(iri)
 	if err != nil {
-		Error(w, r, http.StatusInternalServerError, err, nil)
+		Error(w, r, http.StatusBadGateway, err, nil)
 		return
 	}
 
 	// set up data dict and render
 
 	data := map[string]interface{}{
-		"Item": wrapped,
+		"Items": []wocab.WebVocab{
+			wrapped,
+		},
+	}
+
+	Render(w, r, "res/collection.page.tmpl", data)
+}
+
+// Write out a page showing activity pub content accessible via iter.
+func Iter(w http.ResponseWriter, r *http.Request, it fedutil.Iter) {
+	// fetch objects
+
+	vs, err := fedutil.FetchIter(it)
+	if err != nil {
+		Error(w, r, http.StatusBadGateway, err, nil)
+		return
+	}
+
+	// wrap objects
+
+	wrapped, err := wocab.News(vs...)
+	if err != nil {
+		Error(w, r, http.StatusBadGateway, err, nil)
+		return
+	}
+
+	// set upd ata dict and render
+
+	data := map[string]interface{}{
+		"Items": wrapped,
 	}
 
 	Render(w, r, "res/collection.page.tmpl", data)

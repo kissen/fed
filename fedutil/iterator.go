@@ -44,6 +44,10 @@ func Begin(iterable interface{}) (Iter, error) {
 		return nil, errors.New("nil argument")
 	}
 
+	if it, ok := iterable.(Iter); ok {
+		return it, nil
+	}
+
 	switch v := iterable.(type) {
 	case vocab.ActivityStreamsOrderedCollectionPage:
 		items := v.GetActivityStreamsOrderedItems()

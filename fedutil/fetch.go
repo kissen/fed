@@ -59,11 +59,11 @@ func FetchAll(iterable interface{}) (vs []vocab.Type, err error) {
 	if it, err := Begin(iterable); err != nil {
 		return nil, err
 	} else {
-		return fetchIter(it)
+		return FetchIter(it)
 	}
 }
 
-func fetchIterEntry(it IterEntry) (vocab.Type, error) {
+func FetchIterEntry(it IterEntry) (vocab.Type, error) {
 	if !it.HasAny() {
 		return nil, errors.New("no value present")
 	} else if it.IsIRI() {
@@ -73,9 +73,9 @@ func fetchIterEntry(it IterEntry) (vocab.Type, error) {
 	}
 }
 
-func fetchIter(it Iter) (vs []vocab.Type, err error) {
+func FetchIter(it Iter) (vs []vocab.Type, err error) {
 	for ; it != it.End(); it = it.Next() {
-		if v, err := fetchIterEntry(it); err != nil {
+		if v, err := FetchIterEntry(it); err != nil {
 			return nil, err
 		} else {
 			vs = append(vs, v)

@@ -18,5 +18,7 @@
 
 	</div>
 
-	{{.Item.Fragment}}
+	{{range .Items}}
+		{{.Fragment}}
+	{{end}}
 {{end}}

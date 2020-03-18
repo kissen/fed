@@ -45,7 +45,7 @@ func beginsInitial(iterators ...Iter) (Iter, error) {
 
 		// fetch value for head
 
-		v, err := fetchIterEntry(it)
+		v, err := FetchIterEntry(it)
 		if err != nil {
 			return nil, errors.Wrapf(err, "iterators[%v] bad", i)
 		}
@@ -129,7 +129,7 @@ func (b *begins) Next() Iter {
 	removeI := its[i] == its[i].End()
 
 	if !removeI {
-		if v, err := fetchIterEntry(its[i]); err != nil {
+		if v, err := FetchIterEntry(its[i]); err != nil {
 			log.Println(err)
 			removeI = true
 		} else {
