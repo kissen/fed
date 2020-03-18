@@ -88,11 +88,18 @@ func Post(body []byte, iri *url.URL) (err error) {
 
 	// evaluate result
 
-	if resp.StatusCode != http.StatusOK {
-		// server replied with error?
-		// XXX: server might use non-200 status code to indicate success
+	if !successful(resp.StatusCode) {
+		// read error body if there is one
 
-		return fmt.Errorf(`%v returned status="%v"`, iri, resp.Status)
+		body := ""
+
+		if bodyBytes, err := ioutil.ReadAll(resp.Body); err == nil {
+			body = string(bodyBytes)
+		}
+
+		// return error
+
+		return fmt.Errorf(`%v returned status="%v" body="%v"`, iri, resp.Status, body)
 	}
 
 	return nil
@@ -130,4 +137,10 @@ func SetHeaders(req *http.Request) {
 	}
 
 	req.Header.Set("User-Agent", "fed/0.x")
+}
+
+// Returns whether status represents a "successful" response, i.e.
+// whether status is in the range [200,299].
+func successful(status int) bool {
+	return status >= 200 && status <= 299
 }

@@ -9,6 +9,9 @@ import (
 )
 
 type FedClient interface {
+	// Return the clients actor IRI.
+	IRI() *url.URL
+
 	// Return an iterator of the users inbox.
 	Inbox() (fedutil.Iter, error)
 
@@ -24,20 +27,21 @@ type FedClient interface {
 }
 
 type fedclient struct {
+	iri       *url.URL
 	inboxIRI  *url.URL
 	outboxIRI *url.URL
 	likedIRI  *url.URL
 }
 
-func New(actorAddr string) (FedClient, error) {
+func New(actorAddr string) (_ FedClient, err error) {
 	fc := &fedclient{}
 
-	iri, err := url.Parse(actorAddr)
+	fc.iri, err = url.Parse(actorAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "bad actor address")
 	}
 
-	obj, err := fedutil.Fetch(iri)
+	obj, err := fedutil.Fetch(fc.iri)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +67,10 @@ func New(actorAddr string) (FedClient, error) {
 	}
 
 	return fc, nil
+}
+
+func (fc *fedclient) IRI() *url.URL {
+	return fc.iri
 }
 
 func (fc *fedclient) Inbox() (fedutil.Iter, error) {

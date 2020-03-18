@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/go-fed/activity/streams"
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
@@ -158,14 +159,49 @@ func GetStatic(w http.ResponseWriter, r *http.Request) {
 
 // POST /submit
 func PostSubmit(w http.ResponseWriter, r *http.Request) {
-	contents := strings.TrimSpace(r.FormValue("postinput"))
+	// check whether we have valid input
 
-	if len(contents) == 0 {
+	payload := strings.TrimSpace(r.FormValue("postinput"))
+
+	if len(payload) == 0 {
 		Error(w, r, http.StatusBadRequest, errors.New("empty note"), nil)
 		return
 	}
 
-	Error(w, r, http.StatusNotImplemented, nil, nil)
+	if len(payload) > 1024 {
+		StatusPayloadTooLarge := 413
+		Error(w, r, StatusPayloadTooLarge, nil, nil)
+	}
+
+	// retreive the client session
+
+	client := Context(r).Client
+	if client == nil {
+		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
+	}
+
+	// build up the note
+
+	note := streams.NewActivityStreamsNote()
+
+	attrib := streams.NewActivityStreamsAttributedToProperty()
+	attrib.AppendIRI(client.IRI())
+	note.SetActivityStreamsAttributedTo(attrib)
+
+	content := streams.NewActivityStreamsContentProperty()
+	content.AppendXMLSchemaString(payload)
+	note.SetActivityStreamsContent(content)
+
+	// post it to the server
+
+	if err := client.Create(note); err != nil {
+		Error(w, r, http.StatusBadGateway, err, nil)
+		return
+	}
+
+	// redirect to index page for now; we'll improve this later
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 // Handler for Not Found Errors
