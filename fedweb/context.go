@@ -10,8 +10,11 @@ const _FEDWEB_CONTEXT_KEY = "FedWebContext"
 
 type FedWebContext struct {
 	// The name of the tab that should be highlighted in the
-	// navigation bar. If empty, not ab will be highlighted.
+	// navigation bar. If empty, not tab will be highlighted.
 	Selected string
+
+	// The title that should be used.
+	Title string
 
 	// Flashes to display on top of the page. Might be nil.
 	Flashs []string
@@ -67,6 +70,12 @@ func Context(r *http.Request) *FedWebContext {
 func Selected(r *http.Request, tab string) {
 	if fc := Context(r); len(fc.Selected) == 0 {
 		fc.Selected = tab
+	}
+}
+
+func Title(r *http.Request, title string) {
+	if fc := Context(r); len(fc.Title) == 0 {
+		fc.Title = title
 	}
 }
 

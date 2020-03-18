@@ -32,6 +32,7 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 func GetStream(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStream(%v)", r.URL)
 
+	Title(r, "Your Stream")
 	Selected(r, "Stream")
 
 	// get client; if we are not signed in stream does not make any sense
@@ -57,6 +58,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 func GetLiked(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetLiked(%v)", r.URL)
 
+	Title(r, "You Liked")
 	Selected(r, "Liked")
 
 	if c := Context(r).Client; c == nil {
@@ -70,7 +72,9 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 func GetFollowing(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetFollowing(%v)", r.URL)
 
+	Title(r, "Following")
 	Selected(r, "Following")
+
 	Render(w, r, "res/collection.page.tmpl", nil)
 }
 
@@ -78,7 +82,9 @@ func GetFollowing(w http.ResponseWriter, r *http.Request) {
 func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetFollowers(%v)", r.URL)
 
+	Title(r, "Followers")
 	Selected(r, "Followers")
+
 	Render(w, r, "res/collection.page.tmpl", nil)
 }
 
@@ -255,6 +261,7 @@ func Remote(w http.ResponseWriter, r *http.Request, iri *url.URL) {
 		},
 	}
 
+	Title(r, iri.String())
 	Render(w, r, "res/collection.page.tmpl", data)
 }
 
