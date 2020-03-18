@@ -21,7 +21,7 @@ func Published(object vocab.Type) (time.Time, error) {
 
 	published := p.GetActivityStreamsPublished()
 	if published == nil {
-		return time.Time{}, fmt.Errorf("%T has nil published property")
+		return time.Time{}, fmt.Errorf("%T has nil published property", object)
 	}
 
 	return published.Get(), nil

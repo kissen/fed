@@ -8,7 +8,22 @@ import (
 	"time"
 )
 
-func Begins(iterators ...Iter) (Iter, error) {
+func Begins(iterables ...interface{}) (Iter, error) {
+	var its []Iter
+
+	for i, iterable := range iterables {
+		it, err := Begin(iterable)
+		if err != nil {
+			return nil, errors.Wrapf(err, "iterables[%v] bad", i)
+		}
+
+		its = append(its, it)
+	}
+
+	return beginsInitial(its...)
+}
+
+func beginsInitial(iterators ...Iter) (Iter, error) {
 	bs := &begins{}
 
 	// retrieve head for all iterators; this checks whether they are any
