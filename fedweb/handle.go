@@ -31,16 +31,24 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 func GetStream(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStream(%v)", r.URL)
 
-	Selected(r, "Stream")
-	Render(w, r, "res/collection.page.tmpl", nil)
+	if c := Context(r).Client; c == nil {
+		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
+	} else {
+		Selected(r, "Stream")
+		Remote(w, r, http.StatusOK, c.InboxIRI())
+	}
 }
 
 // GET /liked
 func GetLiked(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetLiked(%v)", r.URL)
 
-	Selected(r, "Liked")
-	Render(w, r, "res/collection.page.tmpl", nil)
+	if c := Context(r).Client; c == nil {
+		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
+	} else {
+		Selected(r, "Liked")
+		Remote(w, r, http.StatusOK, c.LikedIRI())
+	}
 }
 
 // GET /following
@@ -89,21 +97,9 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fetch and wrap object
+	// let our friend Remote take care of it
 
-	wrapped, err := wocab.Fetch(iri)
-	if err != nil {
-		Error(w, r, http.StatusInternalServerError, err, nil)
-		return
-	}
-
-	// set up data dict and render
-
-	data := map[string]interface{}{
-		"Item": wrapped,
-	}
-
-	Render(w, r, "res/collection.page.tmpl", data)
+	Remote(w, r, http.StatusOK, iri)
 }
 
 // GET /login
@@ -220,6 +216,25 @@ func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data
 	// render with correct status
 	Status(r, status)
 	Render(w, r, "res/error.page.tmpl", renderData)
+}
+
+// Write out a page showing remote content at addr.
+func Remote(w http.ResponseWriter, r *http.Request, status int, iri *url.URL) {
+	// fetch and wrap object
+
+	wrapped, err := wocab.Fetch(iri)
+	if err != nil {
+		Error(w, r, http.StatusInternalServerError, err, nil)
+		return
+	}
+
+	// set up data dict and render
+
+	data := map[string]interface{}{
+		"Item": wrapped,
+	}
+
+	Render(w, r, "res/collection.page.tmpl", data)
 }
 
 func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}) {

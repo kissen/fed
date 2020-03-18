@@ -15,11 +15,20 @@ type FedClient interface {
 	// Return an iterator of the users inbox.
 	Inbox() (fedutil.Iter, error)
 
+	// Return the IRI of the users inbox.
+	InboxIRI() *url.URL
+
 	// Return an iterator of the users outbox.
 	Outbox() (fedutil.Iter, error)
 
+	// Return the IRI of the users outbox.
+	OutboxIRI() *url.URL
+
 	// Return an iterator of the objects this user liked.
 	Liked() (fedutil.Iter, error)
+
+	// Return the IRI of the users liked collection.
+	LikedIRI() *url.URL
 
 	// Wrap event into an Create activity and submit
 	// it to the users outbox.
@@ -77,12 +86,24 @@ func (fc *fedclient) Inbox() (fedutil.Iter, error) {
 	return fc.fetchCollection(fc.inboxIRI)
 }
 
+func (fc *fedclient) InboxIRI() *url.URL {
+	return fc.inboxIRI
+}
+
 func (fc *fedclient) Outbox() (fedutil.Iter, error) {
 	return fc.fetchCollection(fc.outboxIRI)
 }
 
+func (fc *fedclient) OutboxIRI() *url.URL {
+	return fc.inboxIRI
+}
+
 func (fc *fedclient) Liked() (fedutil.Iter, error) {
 	return fc.fetchCollection(fc.likedIRI)
+}
+
+func (fc *fedclient) LikedIRI() *url.URL {
+	return fc.inboxIRI
 }
 
 func (fc *fedclient) Create(event vocab.Type) error {
