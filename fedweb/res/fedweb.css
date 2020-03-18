@@ -125,6 +125,7 @@ main > h1 {
 }
 
 .svgbutton {
+    height: var(--medium);
     margin-right: 2.5em;
     padding: 4pt;
 }
