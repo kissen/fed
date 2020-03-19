@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-fed/activity/streams"
 	"github.com/gorilla/mux"
@@ -10,7 +9,6 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/fedweb/fedclient"
 	"gitlab.cs.fau.de/kissen/fed/fedweb/wocab"
 	"html/template"
-	"io"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -36,11 +34,11 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 	Title(r, "Your Stream")
 	Selected(r, "Stream")
 
-	// get client; if we are not signed in stream does not make any sense
+	// get client; if we are not logged in /stream does not make any sense
 
 	client := Context(r).Client
 	if client == nil {
-		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -62,11 +60,12 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 	Title(r, "You Liked")
 	Selected(r, "Liked")
 
-	if c := Context(r).Client; c == nil {
-		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
-	} else {
-		Remote(w, r, c.LikedIRI())
+	client := Context(r).Client
+	if client == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
+
+	Remote(w, r, client.LikedIRI())
 }
 
 // GET /following
@@ -76,7 +75,7 @@ func GetFollowing(w http.ResponseWriter, r *http.Request) {
 	Title(r, "Following")
 	Selected(r, "Following")
 
-	Render(w, r, "res/collection.page.tmpl", nil)
+	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // GET /followers
@@ -86,7 +85,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	Title(r, "Followers")
 	Selected(r, "Followers")
 
-	Render(w, r, "res/collection.page.tmpl", nil)
+	Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 // GET /remote
@@ -130,11 +129,11 @@ func GetLogin(w http.ResponseWriter, r *http.Request) {
 
 	// if we are logged in, forward to stream
 
-	if Context(r).Client != nil && false {
+	if Context(r).Client != nil {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 
-	// set up data for the error handler
+	// we are not logged in; show the login form
 
 	Title(r, "Login")
 	Render(w, r, "res/login.page.tmpl", nil)
@@ -163,7 +162,8 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// try to create a client
+	// try to create a client; this is to check whether the credentials
+	// are actually working
 
 	client, err := fedclient.New(addr)
 	if err != nil {
@@ -175,9 +175,17 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// success; forward to stream page
+	// success; set context and write cookie for later
 
-	Context(r).Client = client
+	context := Context(r)
+	context.Client = client
+	context.Username = &username
+	context.ActorIRI = &addr
+
+	context.WriteToCookie(w)
+
+	// we are just logged on; forward to stream page for now
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -185,22 +193,28 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 func GetStatic(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStatic(%v)", r.URL)
 
+	// find requested file on file system and read it into a buffer
+
 	name := path.Base(r.URL.Path)
 	relpath := filepath.Join("res", name)
 
 	content, err := ioutil.ReadFile(relpath)
 	if err != nil {
-		log.Printf("opening file failed: %v", err)
+		Error(w, r, http.StatusNotFound, err, nil)
 		return
 	}
+
+	// set the correct mimetype header
 
 	mimetype := mime.TypeByExtension(path.Ext(name))
 	w.Header().Add("Content-Type", mimetype)
 
+	// write out the contents
+
 	w.WriteHeader(http.StatusOK)
 
-	if _, err := io.WriteString(w, string(content)); err != nil {
-		log.Printf("writing file to client failed: %v", err)
+	if _, err := w.Write(content); err != nil {
+		log.Printf("writing static file to client failed: %v", err)
 	}
 }
 
@@ -227,7 +241,7 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
-		Error(w, r, http.StatusUnauthorized, errors.New("nil client"), nil)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	// build up the note
@@ -286,6 +300,7 @@ func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data
 	renderData := fedutil.SumMaps(data, errorData)
 
 	// render with correct status
+
 	Status(r, status)
 	Render(w, r, "res/error.page.tmpl", renderData)
 }
@@ -330,7 +345,7 @@ func Iter(w http.ResponseWriter, r *http.Request, it fedutil.Iter) {
 		return
 	}
 
-	// set upd ata dict and render
+	// set up data dict and render
 
 	data := map[string]interface{}{
 		"Items": wrapped,
