@@ -1,0 +1,13 @@
+{{template "base" .}}
+
+{{define "title"}}
+	Login
+{{end}}
+
+{{define "body"}}
+	<form class="loginform" action="/login" method="post">
+		<input type="text" name="username" placeholder="Username">
+		<input type="url" name="iri" placeholder="Actor IRI">
+		<input type="submit" value="log in">
+	</form>
+{{end}}

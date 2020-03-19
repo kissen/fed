@@ -102,6 +102,29 @@ main > h1 {
 }
 
 /*
+ * styling of login page
+ */
+
+.loginform input {
+    background-color: var(--accent);
+    border: none;
+    box-sizing: border-box;
+    color: var(--accent-ink);
+    font-size: var(--medium);
+    margin-bottom: 0.5em;
+    padding: 1em;
+    width: 100%;
+}
+
+.loginform input:hover {
+    background-color: var(--accent-shadow);
+}
+
+.loginform input:active {
+    background-color: var(--accent-shadow);
+}
+
+/*
  * styling of the individual content cards and their fields
  */
 

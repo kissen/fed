@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"gitlab.cs.fau.de/kissen/fed/fedweb/fedclient"
 	"net/http"
 )
@@ -43,12 +44,10 @@ type FedWebContext struct {
 func AddContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Context().Value(_FEDWEB_CONTEXT_KEY) == nil {
-			dbgClient, err := fedclient.New(
-				"http://localhost:9999/ap/alice",
-			)
-
+			dbgClient, err := fedclient.New("http://localhost:9999/ap/alice")
 			if err != nil {
-				panic(err)
+				log.Println("creating client failed:", err)
+				dbgClient = nil
 			}
 
 			fc := &FedWebContext{

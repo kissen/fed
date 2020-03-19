@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
+	"gitlab.cs.fau.de/kissen/fed/fedweb/fedclient"
 	"gitlab.cs.fau.de/kissen/fed/fedweb/wocab"
 	"html/template"
 	"io"
@@ -127,14 +128,57 @@ func GetRemote(w http.ResponseWriter, r *http.Request) {
 func GetLogin(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetLogin(%v)", r.URL)
 
-	Error(w, r, http.StatusNotImplemented, nil, nil)
+	// if we are logged in, forward to stream
+
+	if Context(r).Client != nil && false {
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
+
+	// set up data for the error handler
+
+	Title(r, "Login")
+	Render(w, r, "res/login.page.tmpl", nil)
 }
 
 // POST /login
 func PostLogin(w http.ResponseWriter, r *http.Request) {
 	log.Printf("PostLogin(%v)", r.URL)
 
-	Error(w, r, http.StatusNotImplemented, nil, nil)
+	// check whether we have valid input
+
+	username := strings.TrimSpace(r.FormValue("username"))
+	addr := strings.TrimSpace(r.FormValue("iri"))
+
+	if len(username) == 0 {
+		FlashWarning(r, "missing username")
+		Status(r, http.StatusBadRequest)
+		GetLogin(w, r)
+		return
+	}
+
+	if len(addr) == 0 {
+		FlashWarning(r, "missing actor IRI")
+		Status(r, http.StatusBadRequest)
+		GetLogin(w, r)
+		return
+	}
+
+	// try to create a client
+
+	client, err := fedclient.New(addr)
+	if err != nil {
+		log.Printf(`login username="%v" addr="%v" failed: err="%v"`, username, addr, err)
+
+		FlashWarning(r, "login failed")
+		Status(r, http.StatusUnauthorized)
+		GetLogin(w, r)
+		return
+	}
+
+	// success; forward to stream page
+
+	Context(r).Client = client
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 // GET /static/*
