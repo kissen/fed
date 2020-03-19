@@ -72,6 +72,24 @@ nav {
     background-color: var(--accent-shadow);
 }
 
+.logoutform {
+    float: right;
+}
+
+.logoutbutton {
+    background-color: var(--accent);
+    border: none;
+    color: var(--accent-ink);
+    cursor: pointer;
+    font-size: var(--medium);
+    padding-right: 1em;
+    padding-top: 1em;
+}
+
+.logoutbutton:hover {
+    background-color: var(--accent-shadow);
+}
+
 /*
  * general content formatting
  */
@@ -110,6 +128,7 @@ main > h1 {
     border: none;
     box-sizing: border-box;
     color: var(--accent-ink);
+    cursor: pointer;
     font-size: var(--medium);
     margin-bottom: 0.5em;
     padding: 1em;

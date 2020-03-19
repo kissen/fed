@@ -19,6 +19,10 @@ type FedWebContext struct {
 	CookieContext
 }
 
+func (fwc *FedWebContext) LoggedIn() bool {
+	return fwc.Client != nil
+}
+
 func (fwc *FedWebContext) String() string {
 	return fmt.Sprintf(`Selected="%v" Title="%v" Status=%v Username="%v" ActorIRI="%v"`,
 		fwc.Selected, fwc.Title, fwc.Status, fwc.Username, fwc.ActorIRI,

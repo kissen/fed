@@ -7,7 +7,7 @@
 		<title>{{template "title" .}}</title>
 		<link rel="icon" href="/static/inbox.svg">
 		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=0.8">
+		<meta name="viewport" content="width=device-width, initial-scale=0.7, maximum-scale=0.7">
 		<link rel=stylesheet href="/static/fedweb.css">
 		<script src="/static/resize_submit.js"></script>
 	</head>
@@ -33,6 +33,13 @@
 				Followers
 			    </div>
 		    </a>
+		    {{if .Context.LoggedIn}}
+				    <form class="logoutform" action="/logout" method="post">
+					    <input class="logoutbutton" type="submit" value="Log Out">
+				    </form>
+			    </div>
+		    {{end}}
+
 		</nav>
 
 		<main>
