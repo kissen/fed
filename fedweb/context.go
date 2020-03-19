@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"context"
 	"encoding/json"
 	"github.com/pkg/errors"
@@ -69,11 +70,18 @@ func (cc *CookieContext) LoadFromCookie(r *http.Request) error {
 		return errors.Wrap(err, "error retrieving cookie")
 	}
 
+	// convert the base64 value of the cookie to json binary data
+
+	text, err := base64.StdEncoding.DecodeString(cookie.Value)
+	if err != nil {
+		return errors.Wrap(err, "cookie value malformed base64")
+	}
+
 	// try to interpret the contents of the cookie
 
 	var buf CookieContext
 
-	if err := json.Unmarshal([]byte(cookie.Value), &buf); err != nil {
+	if err := json.Unmarshal(text, &buf); err != nil {
 		return errors.Wrap(err, "cookie unmarshal failed")
 	}
 
@@ -108,16 +116,20 @@ func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 
 	// conver buf to json
 
-	encoded, err := json.Marshal(&buf)
+	text, err := json.Marshal(&buf)
 	if err != nil {
 		return errors.Wrap(err, "cookie marshal failed")
 	}
+
+	// convert json to base64
+
+	encoded := base64.StdEncoding.EncodeToString(text)
 
 	// build up cookie
 
 	cookie := http.Cookie{
 		Name:  _COOKIE_CONTEXT_KEY,
-		Value: string(encoded),
+		Value: encoded,
 	}
 
 	// send out cookie wit the response

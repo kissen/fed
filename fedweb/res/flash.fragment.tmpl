@@ -1,5 +1,5 @@
 {{define "flash"}}
-	{{range .Context.Flashs}}
+	{{range .Flashs}}
 		<div class="card">
 			<div class="flash">
 				<div class="cardmain">
@@ -9,7 +9,7 @@
 		</div>
 	{{end}}
 
-	{{range .Context.Warnings}}
+	{{range .Warnings}}
 		<div class="card">
 			<div class="warning">
 				<div class="flash">
@@ -21,7 +21,7 @@
 		</div>
 	{{end}}
 
-	{{range .Context.Errors}}
+	{{range .Errors}}
 		<div class="card">
 			<div class="error">
 				<div class="flash">

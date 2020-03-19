@@ -343,8 +343,12 @@ func Render(w http.ResponseWriter, r *http.Request, page string, data map[string
 	// fill in values that are (almost) always needed
 
 	data = fedutil.SumMaps(data)
-	data["SubmitPrompt"] = SubmitPrompt()
+
 	data["Context"] = Context(r)
+	data["SubmitPrompt"] = SubmitPrompt()
+	data["Flashs"] = Context(r).Flashs
+	data["Warnings"] = Context(r).Warnings
+	data["Errors"] = Context(r).Errors
 
 	// load template files
 
@@ -353,13 +357,19 @@ func Render(w http.ResponseWriter, r *http.Request, page string, data map[string
 		"res/flash.fragment.tmpl",
 	}
 
-	// compile template
+	// compile template; if this fails it's a programming error
 
 	ts, err := template.ParseFiles(templates...)
 	if err != nil {
 		log.Printf("parsing templates failed: %v", err)
 		return
 	}
+
+	// set cookie for next time
+
+	context := Context(r)
+	context.ClearFlashes()
+	context.WriteToCookie(w)
 
 	// write http status
 
