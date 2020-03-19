@@ -98,4 +98,4 @@ The affected files, some of which were modified, are
 
 	like-active.svg  like.svg  repeat-active.svg  repeat.svg
 	reply-active.svg  reply.svg external.svg send.svg inbox.svg
-	warning.svg error.svg
+	warning.svg error.svg check.svg

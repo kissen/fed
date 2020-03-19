@@ -141,6 +141,7 @@ func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 	cookie := http.Cookie{
 		Name:  _COOKIE_CONTEXT_KEY,
 		Value: encoded,
+		Path:  "/",
 	}
 
 	// send out cookie wit the response

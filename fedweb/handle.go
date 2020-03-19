@@ -38,6 +38,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
+		FlashWarning(r, "authorization required")
 		Redirect(w, r, "/login")
 		return
 	}
@@ -62,6 +63,7 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
+		FlashWarning(r, "authorization requried")
 		Redirect(w, r, "/login")
 		return
 	}
@@ -131,6 +133,7 @@ func GetLogin(w http.ResponseWriter, r *http.Request) {
 	// if we are logged in, forward to stream
 
 	if Context(r).Client != nil {
+		Flash(r, "already logged in")
 		Redirect(w, r, "/stream")
 		return
 	}
@@ -186,7 +189,24 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 
 	// we are just logged on; forward to stream page for now
 
+	Flash(r, "successfully logged in")
 	Redirect(w, r, "/stream")
+}
+
+// POST /logout
+func PostLogout(w http.ResponseWriter, r *http.Request) {
+	// remove credentials and client from context
+
+	context := Context(r)
+
+	context.Username = nil
+	context.ActorIRI = nil
+	context.Client = nil
+
+	// w/o login we do nothing
+
+	Flash(r, "logged out")
+	Redirect(w, r, "/login")
 }
 
 // GET /static/*
@@ -241,6 +261,7 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
+		FlashWarning(r, "authorization requried")
 		Redirect(w, r, "/login")
 		return
 	}
@@ -270,6 +291,7 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// redirect to index page for now; we'll improve this later
 
+	Flash(r, "submitted")
 	Redirect(w, r, "/")
 }
 

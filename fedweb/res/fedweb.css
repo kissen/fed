@@ -115,8 +115,10 @@ main > h1 {
 }
 
 .flash img {
-    vertical-align: middle;
+    float: left;
     height: var(--medium);
+    padding-top: 4pt;
+    width: var(--medium);
 }
 
 /*

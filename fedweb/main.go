@@ -16,6 +16,7 @@ func listenAndServe() {
 	router.HandleFunc("/followers", GetFollowers).Methods("GET")
 	router.HandleFunc("/login", GetLogin).Methods("GET")
 	router.HandleFunc("/login", PostLogin).Methods("POST")
+	router.HandleFunc("/logout", PostLogout).Methods("POST")
 	router.HandleFunc("/remote/{remotepath:.+}", GetRemote).Methods("GET")
 	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
 	router.HandleFunc("/submit", PostSubmit).Methods("POST")
