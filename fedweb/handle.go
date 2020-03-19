@@ -38,7 +38,7 @@ func GetStream(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		Redirect(w, r, "/login")
 		return
 	}
 
@@ -62,7 +62,8 @@ func GetLiked(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		Redirect(w, r, "/login")
+		return
 	}
 
 	Remote(w, r, client.LikedIRI())
@@ -130,7 +131,8 @@ func GetLogin(w http.ResponseWriter, r *http.Request) {
 	// if we are logged in, forward to stream
 
 	if Context(r).Client != nil {
-		http.Redirect(w, r, "/", http.StatusFound)
+		Redirect(w, r, "/stream")
+		return
 	}
 
 	// we are not logged in; show the login form
@@ -182,11 +184,9 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 	context.Username = &username
 	context.ActorIRI = &addr
 
-	context.WriteToCookie(w)
-
 	// we are just logged on; forward to stream page for now
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	Redirect(w, r, "/stream")
 }
 
 // GET /static/*
@@ -241,7 +241,8 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 
 	client := Context(r).Client
 	if client == nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		Redirect(w, r, "/login")
+		return
 	}
 
 	// build up the note
@@ -269,7 +270,7 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// redirect to index page for now; we'll improve this later
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	Redirect(w, r, "/")
 }
 
 // Handler for Not Found Errors
@@ -352,6 +353,18 @@ func Iter(w http.ResponseWriter, r *http.Request, it fedutil.Iter) {
 	}
 
 	Render(w, r, "res/collection.page.tmpl", data)
+}
+
+// Redirect to another page
+func Redirect(w http.ResponseWriter, r *http.Request, target string) {
+	// write out the cookies
+
+	context := Context(r)
+	context.WriteToCookie(w)
+
+	// actual redirect
+
+	http.Redirect(w, r, target, http.StatusFound)
 }
 
 func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}) {

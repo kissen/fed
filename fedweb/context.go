@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/base64"
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedweb/fedclient"
 	"log"
@@ -16,6 +17,12 @@ const _COOKIE_CONTEXT_KEY = "CookieContext"
 type FedWebContext struct {
 	VolatileContext
 	CookieContext
+}
+
+func (fwc *FedWebContext) String() string {
+	return fmt.Sprintf(`Selected="%v" Title="%v" Status=%v Username="%v" ActorIRI="%v"`,
+		fwc.Selected, fwc.Title, fwc.Status, fwc.Username, fwc.ActorIRI,
+	)
 }
 
 type VolatileContext struct {
@@ -95,7 +102,7 @@ func (cc *CookieContext) LoadFromCookie(r *http.Request) error {
 	cc.Username = nil
 	cc.ActorIRI = nil
 
-	if !IsEmpty(cc.Username) && !IsEmpty(cc.ActorIRI) {
+	if !IsEmpty(buf.Username) && !IsEmpty(buf.ActorIRI) {
 		cc.Username = buf.Username
 		cc.ActorIRI = buf.ActorIRI
 	}
