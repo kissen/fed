@@ -92,13 +92,7 @@ func (iri IRI) Actor() (string, error) {
 // where the asterix is the placeholder for the base path as defined
 // in iri.Context.
 func (iri IRI) InboxOwner() (string, error) {
-	if owner, dir, err := iri.split(); err != nil {
-		return "", err
-	} else if dir == nil || *dir != "inbox" {
-		return "", fmt.Errorf("Target=%v not an inbox", iri.Target)
-	} else {
-		return *owner, nil
-	}
+	return iri.owner("inbox")
 }
 
 // Return the owner of the given IRI. The IRI needs to have the form
@@ -107,13 +101,37 @@ func (iri IRI) InboxOwner() (string, error) {
 // where the asterix is the placeholder for the base path as defined
 // in iri.Context.
 func (iri IRI) OutboxOwner() (string, error) {
-	if owner, dir, err := iri.split(); err != nil {
-		return "", err
-	} else if dir == nil || *dir != "outbox" {
-		return "", fmt.Errorf("Target=%v not an outbox", iri.Target)
-	} else {
-		return *owner, nil
-	}
+	return iri.owner("outbox")
+}
+
+// Return the owner of the given IRI. The IRI needs to have the form
+//
+//   */{username}/following
+//
+// where the asterix is the placeholder for the base path as defined
+// in iri.Context.
+func (iri IRI) FollowingOwner() (string, error) {
+	return iri.owner("following")
+}
+
+// Return the owner of the given IRI. The IRI needs to have the form
+//
+//   */{username}/followers
+//
+// where the asterix is the placeholder for the base path as defined
+// in iri.Context.
+func (iri IRI) FollowersOwner() (string, error) {
+	return iri.owner("followers")
+}
+
+// Return the owner of the given IRI. The IRI needs to have the form
+//
+//   */{username}/liked
+//
+// where the asterix is the placeholder for the base path as defined
+// in iri.Context.
+func (iri IRI) LikedOwner() (string, error) {
+	return iri.owner("liked")
 }
 
 // Return the object id of the given IRI. The IRI needs to have the form
@@ -236,4 +254,20 @@ func (iri IRI) last(ss []string) *string {
 func (iri IRI) secondToLast(ss []string) *string {
 	idx := len(ss) - 2
 	return &ss[idx]
+}
+
+// Return the owner of the given IRI. The IRI needs to have the form
+//
+//   */{username}/$tail
+//
+// where the asterix is the placeholder for the base path as defined
+// in iri.Context.
+func (iri IRI) owner(tail string) (string, error) {
+	if owner, dir, err := iri.split(); err != nil {
+		return "", err
+	} else if dir == nil || *dir != tail {
+		return "", fmt.Errorf("Target=%v does not have required tail=/%v", iri.Target, tail)
+	} else {
+		return *owner, nil
+	}
 }

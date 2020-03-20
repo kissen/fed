@@ -210,6 +210,18 @@ func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, e
 		return f.GetOutbox(c, iri.URL())
 	}
 
+	if _, err := iri.FollowingOwner(); err == nil {
+		return f.Following(c, iri.URL())
+	}
+
+	if _, err := iri.FollowersOwner(); err == nil {
+		return f.Following(c, iri.URL())
+	}
+
+	if _, err := iri.LikedOwner(); err == nil {
+		return f.Liked(c, iri.URL())
+	}
+
 	// try out actors
 
 	if _, err := iri.Actor(); err == nil {
