@@ -7,20 +7,18 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 )
 
 func openDatabase() db.FedStorage {
 	// open db
 
-	dbPath := filepath.Join(os.TempDir(), "main.db")
-
 	storage := &db.FedEmbeddedStorage{
-		Filepath: dbPath,
+		Filepath: Config().Store,
 	}
 
-	storage.Open()
+	if err := storage.Open(); err != nil {
+		log.Fatal(err)
+	}
 
 	// add some users
 
@@ -64,33 +62,36 @@ func listenAndAccept(storage db.FedStorage) {
 	activityHandler := newActivityHandler(handler, storage)
 	adminHandler := newAdminHandler(admin, storage)
 
-	// set up activity pub routes
+	// configure routes
 
 	router := mux.NewRouter().StrictSlash(false)
+	sr := router.PathPrefix(Config().Base.Path).Subrouter()
 
-	router.HandleFunc(`/ap/{username:[A-Za-z]+}/inbox`, inboxHandler).Methods("GET", "POST")
-	router.HandleFunc(`/ap/{username:[A-Za-z]+}/outbox`, outboxHandler).Methods("GET", "POST")
+	sr.HandleFunc(`/{username:[A-Za-z]+}/inbox`, inboxHandler).Methods("GET", "POST")
+	sr.HandleFunc(`/{username:[A-Za-z]+}/outbox`, outboxHandler).Methods("GET", "POST")
 
 	activityRoutes := []string{
-		`/ap/{username:[A-Za-z]+}`, `/ap/{username:[A-Za-z]+}/followers`,
-		`/ap/{username:[A-Za-z]+}/following`, `/ap/{username:[A-Za-z]+}/liked`,
-		`/ap/storage/{id:[A-Za-z0-9\-]+}`,
+		`/{username:[A-Za-z]+}`, `/{username:[A-Za-z]+}/followers`,
+		`/{username:[A-Za-z]+}/following`, `/{username:[A-Za-z]+}/liked`,
+		`/storage/{id:[A-Za-z0-9\-]+}`,
 	}
 
 	for _, route := range activityRoutes {
-		router.HandleFunc(route, activityHandler).Methods("GET", "POST")
+		sr.HandleFunc(route, activityHandler).Methods("GET", "POST")
 	}
 
 	// build up admin routes
 
-	router.HandleFunc(`/ap/{username:[A-Za-z]+}`, adminHandler).Methods("PUT")
+	sr.HandleFunc(`/{username:[A-Za-z]+}`, adminHandler).Methods("PUT")
+
+	// install midleware
+
+	sr.Use(InstallBaseContext(storage))
 
 	// let's rock!
 
-	addr := ":9999"
-
+	addr := Config().Base.Host
 	log.Printf("starting on addr=%v...", addr)
-
 	Must(http.ListenAndServe(addr, router))
 }
 
