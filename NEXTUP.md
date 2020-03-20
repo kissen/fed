@@ -1,5 +1,7 @@
--> configuration
+-> likes, replies
 
--> federation; start w/ others subscribing to us
+-> federation; start w/ others subscribing to us?
 
--> Merge fedd and fedweb together after all?!
+-> merge fedd and fedweb together after all?!
+
+-> once poc is completed: serious refactor
