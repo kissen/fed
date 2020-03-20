@@ -2,10 +2,12 @@ package fedclient
 
 import (
 	"fmt"
+	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"net/url"
+	"time"
 )
 
 type FedClient interface {
@@ -34,16 +36,23 @@ type FedClient interface {
 	// Return the IRI of the users liked collection.
 	LikedIRI() *url.URL
 
+	// Return an iterator of actors that follow the user.
+	Followers() (fedutil.Iter, error)
+
+	// Return the IRI to the collection of actors that follow this user.
+	FollowersIRI() *url.URL
+
 	// Wrap event into an Create activity and submit
 	// it to the users outbox.
 	Create(event vocab.Type) error
 }
 
 type fedclient struct {
-	iri       *url.URL
-	inboxIRI  *url.URL
-	outboxIRI *url.URL
-	likedIRI  *url.URL
+	iri          *url.URL
+	inboxIRI     *url.URL
+	outboxIRI    *url.URL
+	likedIRI     *url.URL
+	followersIRI *url.URL
 }
 
 func New(actorAddr string) (_ FedClient, err error) {
@@ -75,6 +84,11 @@ func New(actorAddr string) (_ FedClient, err error) {
 	}
 
 	fc.likedIRI, err = getIRI(p.GetActivityStreamsLiked())
+	if err != nil {
+		return nil, err
+	}
+
+	fc.followersIRI, err = getIRI(p.GetActivityStreamsFollowers())
 	if err != nil {
 		return nil, err
 	}
@@ -124,13 +138,49 @@ func (fc *fedclient) LikedIRI() *url.URL {
 	return fc.inboxIRI
 }
 
+func (fc *fedclient) Followers() (fedutil.Iter, error) {
+	return fc.fetchCollection(fc.followersIRI)
+}
+
+func (fc *fedclient) FollowersIRI() *url.URL {
+	return fc.followersIRI
+}
+
 func (fc *fedclient) Create(event vocab.Type) error {
+	// check whether event is a supported type
+
 	note, ok := event.(vocab.ActivityStreamsNote)
 	if !ok {
 		return fmt.Errorf("event of type=%T cannot be wrapped in Create", event)
 	}
 
-	return fedutil.Submit(fc.outboxIRI, note)
+	// get the published date for the Create; if none is available,
+	// use the current time
+
+	publishedDate, err := fedutil.Published(event)
+	if err != nil {
+		publishedDate = time.Now()
+	}
+
+	// build up the Create
+
+	create := streams.NewActivityStreamsCreate()
+
+	object := streams.NewActivityStreamsObjectProperty()
+	object.AppendActivityStreamsNote(note)
+	create.SetActivityStreamsObject(object)
+
+	published := streams.NewActivityStreamsPublishedProperty()
+	published.Set(publishedDate)
+	create.SetActivityStreamsPublished(published)
+
+	audience := streams.NewActivityStreamsAudienceProperty()
+	audience.AppendIRI(fc.followersIRI)
+	create.SetActivityStreamsAudience(audience)
+
+	// send it out
+
+	return fedutil.Submit(fc.outboxIRI, create)
 }
 
 func (fc *fedclient) fetchCollection(target *url.URL) (fedutil.Iter, error) {

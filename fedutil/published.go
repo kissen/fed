@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Try to get the "publish" property from object. On error,
+// Try to get the "published" property from object. On error,
 // return the zero value for time.Time and an error explaining
 // what happened.
 func Published(object vocab.Type) (time.Time, error) {
