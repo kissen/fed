@@ -27,7 +27,7 @@ func listenAndServe() {
 
 	router.Use(AddContext)
 
-	addr := ":8080"
+	addr := Config().Base.Host
 	log.Printf("starting on addr=%v...", addr)
 	Must(http.ListenAndServe(addr, router))
 }
