@@ -182,6 +182,7 @@ main > h1 {
 }
 
 .svgbutton {
+    cursor: pointer;
     height: var(--medium);
     margin-right: 2.5em;
     padding: 4pt;
