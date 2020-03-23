@@ -276,7 +276,7 @@ func (iri IRI) owner(tail string) (string, error) {
 // functions.
 func (iri IRI) isReserved(username string) bool {
 	reserved := []string{
-		"storage", "static", "authorize", "token",
+		"storage", "static", "oauth",
 	}
 
 	for _, r := range reserved {

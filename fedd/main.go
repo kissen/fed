@@ -67,8 +67,9 @@ func InstallApHandlers(storage db.FedStorage, router *mux.Router) {
 }
 
 func InstallOAuthHandlers(oa oauth.FedOAuther, router *mux.Router) {
-	router.HandleFunc("/authorize", newAuthorizeHandler(oa)).Methods("GET", "POST")
-	router.HandleFunc("/token", newTokenHandler(oa)).Methods("GET", "POST")
+	router.HandleFunc("/oauth/authorize", oa.GetAuthorize).Methods("GET")
+	router.HandleFunc("/oauth/authorize", oa.PostAuthorize).Methods("POST")
+	router.HandleFunc("/oauth/token", oa.PostToken).Methods("POST")
 }
 
 func InstallAdminHandlers(s db.FedStorage, router *mux.Router) {
@@ -82,10 +83,7 @@ func main() {
 	storage := OpenDatabase()
 	defer storage.Close()
 
-	oa, err := oauth.NewFedOAuther(storage)
-	if err != nil {
-		log.Panic(err)
-	}
+	oa := oauth.New(storage)
 
 	router := mux.NewRouter().StrictSlash(false)
 	sr := router.PathPrefix(Config().Base.Path).Subrouter()
