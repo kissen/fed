@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/go-fed/activity/pub"
-	"gitlab.cs.fau.de/kissen/fed/fedd/ap"
 	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"log"
 	"net/http"
@@ -89,14 +88,5 @@ func newActivityHandler(handler pub.HandlerFunc, store db.FedStorage) http.Handl
 			"not acceptable; check https://www.w3.org/TR/activitypub/#retrieving-objects",
 			http.StatusNotAcceptable,
 		)
-	}
-}
-
-func newAdminHandler(admin *ap.FedAdminProtocol, store db.FedStorage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("AdminHandler(%v)", r.URL)
-
-		// AdminProtocol takes care of everything :)
-		admin.Handle(r.Context(), w, r)
 	}
 }

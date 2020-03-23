@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedd/db"
 	"net/url"
 	"path"
@@ -158,8 +157,8 @@ func (iri IRI) RetrieveOwner() (*db.FedUser, error) {
 
 	if username, _, err := iri.split(); err != nil {
 		return nil, err
-	} else if *username == "storage" {
-		return nil, errors.New("reserved username")
+	} else if iri.isReserved(*username) {
+		return nil, fmt.Errorf("reserved username=%v", *username)
 	} else {
 		return FromContext(iri.Context).Storage.RetrieveUser(*username)
 	}
@@ -270,4 +269,21 @@ func (iri IRI) owner(tail string) (string, error) {
 	} else {
 		return *owner, nil
 	}
+}
+
+// Return whether username is a reserved username, that is a name
+// that may not appear as first IRI component because it has other
+// functions.
+func (iri IRI) isReserved(username string) bool {
+	reserved := []string{
+		"storage", "static", "authorize", "token",
+	}
+
+	for _, r := range reserved {
+		if username == r {
+			return true
+		}
+	}
+
+	return false
 }

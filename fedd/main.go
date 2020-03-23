@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"gitlab.cs.fau.de/kissen/fed/fedd/ap"
 	"gitlab.cs.fau.de/kissen/fed/fedd/db"
+	"gitlab.cs.fau.de/kissen/fed/fedd/oauth"
 	"log"
 	"net/http"
 )
@@ -65,11 +66,14 @@ func InstallApHandlers(storage db.FedStorage, router *mux.Router) {
 	router.Use(InstallBaseContext(storage))
 }
 
-func InstallAdminHandlers(storage db.FedStorage, router *mux.Router) {
-	admin := &ap.FedAdminProtocol{}
-	adminHandler := newAdminHandler(admin, storage)
+func InstallOAuthHandlers(oa oauth.FedOAuther, router *mux.Router) {
+	router.HandleFunc("/authorize", newAuthorizeHandler(oa)).Methods("GET", "POST")
+	router.HandleFunc("/token", newTokenHandler(oa)).Methods("GET", "POST")
+}
 
-	router.HandleFunc(`/{username:[A-Za-z]+}`, adminHandler).Methods("PUT")
+func InstallAdminHandlers(s db.FedStorage, router *mux.Router) {
+	a := &ap.FedAdminProtocol{}
+	router.HandleFunc(`/{username:[A-Za-z]+}`, newAdminHandler(a, s)).Methods("PUT")
 }
 
 func main() {
@@ -78,10 +82,17 @@ func main() {
 	storage := OpenDatabase()
 	defer storage.Close()
 
+	oa, err := oauth.NewFedOAuther(storage)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	router := mux.NewRouter().StrictSlash(false)
 	sr := router.PathPrefix(Config().Base.Path).Subrouter()
-	InstallApHandlers(storage, sr)
+
+	InstallOAuthHandlers(oa, sr)
 	InstallAdminHandlers(storage, sr)
+	InstallApHandlers(storage, sr) // includes catchall
 
 	addr := Config().Base.Host
 	log.Printf("starting on addr=%v...", addr)
