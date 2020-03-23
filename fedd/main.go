@@ -19,6 +19,7 @@ func OpenDatabase() db.FedStorage {
 	// add some users for testing
 	for _, username := range []string{"alice", "bob", "celia"} {
 		user := &db.FedUser{Name: username}
+		user.SetPassword(username)
 		Must(storage.StoreUser(user))
 	}
 

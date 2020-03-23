@@ -1,6 +1,8 @@
 package db
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -9,7 +11,8 @@ import (
 
 // Represents a user registered with the service.
 type FedUser struct {
-	Name string
+	Name           string
+	PasswordSHA256 []byte
 
 	Inbox     []*url.URL
 	Outbox    []*url.URL
@@ -26,11 +29,32 @@ func (u *FedUser) Collections() [][]*url.URL {
 	}
 }
 
+// Hash the plaintext password and assign the result to
+// FedUser.PasswordSHA256.
+func (u *FedUser) SetPassword(password string) {
+	u.PasswordSHA256 = u.hash(password)
+}
+
+// Return whether plaintext password, when hashed, matches
+// the assigned password.
+func (u *FedUser) PasswordOK(password string) bool {
+	hash := u.hash(password)
+	return bytes.Compare(hash, u.PasswordSHA256) == 0
+}
+
 func (u *FedUser) String() string {
 	return fmt.Sprintf(
 		"{Name=%v Inbox=%v Outbox=%v Following=%v Followers=%v Liked=%v}",
 		u.Name, u.Inbox, u.Outbox, u.Following, u.Followers, u.Liked,
 	)
+}
+
+func (u *FedUser) hash(password string) []byte {
+	// TODO: salt
+
+	h := sha256.New()
+	h.Write([]byte(password))
+	return h.Sum(nil)
 }
 
 func userToBytes(user *FedUser) ([]byte, error) {
