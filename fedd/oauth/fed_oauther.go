@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 )
 
@@ -44,21 +43,11 @@ type FedOAuther interface {
 type fedoauther struct {
 	// Storage for accessing user database.
 	Storage db.FedStorage
-
-	// Map from code to associated username.
-	Codes     map[string]string
-	CodesLock sync.Mutex
-
-	// Map from token to associated username.
-	Tokens     map[string]string
-	TokensLock sync.Mutex
 }
 
 func New(storage db.FedStorage) FedOAuther {
 	return &fedoauther{
 		Storage: storage,
-		Codes:   make(map[string]string),
-		Tokens:  make(map[string]string),
 	}
 }
 
@@ -99,7 +88,7 @@ func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check wheter credentials are valid
+	// check whether credentials are valid
 
 	user, err := oa.Storage.RetrieveUser(username)
 	if err != nil {
@@ -138,15 +127,23 @@ func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
 	qu.Add("code", code)
 	redirect.RawQuery = qu.Encode()
 
-	// all good; set set and send out reply
+	// all good; write code to db
 
-	oa.CodesLock.Lock()
-	defer oa.CodesLock.Unlock()
+	c := db.FedOAuthCode{
+		Code:     code,
+		Username: user.Name,
+		IssuedOn: time.Now().UTC(),
+	}
 
-	oa.Codes[code] = user.Name
-	log.Printf("recording code=%v for user=%v", code, user.Name)
+	if err := oa.Storage.StoreCode(&c); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// send out reply
 
 	http.Redirect(w, r, redirect.String(), http.StatusFound)
+	log.Printf("recorded code=%v for user=%v", code, user.Name)
 }
 
 func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
@@ -177,12 +174,9 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 
 	// look up user
 
-	oa.CodesLock.Lock()
-	defer oa.CodesLock.Unlock()
-
-	username, ok := oa.Codes[code]
-	if !ok {
-		http.Error(w, "unknown code", http.StatusUnauthorized)
+	codemeta, err := oa.Storage.RetrieveCode(code)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -194,13 +188,24 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tokenmeta := db.FedOAuthToken{
+		Token:    token,
+		Username: codemeta.Username,
+		IssuedOn: time.Now().UTC(),
+	}
+
+	if err := oa.Storage.StoreToken(&tokenmeta); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	// create reply message
 
 	reply := map[string]interface{}{
-		"access_token": token,
+		"access_token": tokenmeta.Token,
 		"token_type":   "Bearer",
 		"scope":        "all",
-		"created_at":   time.Now().Unix(),
+		"created_at":   tokenmeta.IssuedOn.Unix(),
 	}
 
 	replybytes, err := json.Marshal(&reply)
@@ -208,14 +213,6 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// record token
-
-	oa.TokensLock.Lock()
-	defer oa.TokensLock.Unlock()
-
-	oa.Tokens[token] = username
-	log.Printf("recording token=%v for user=%v", token, username)
 
 	// write out response
 
@@ -225,24 +222,28 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write(replybytes); err != nil {
 		log.Printf("repy with token failed: %v", err)
 	}
+
+	log.Printf("recorded token=%v for user=%v", token, codemeta.Username)
 }
 
 func (oa *fedoauther) UserForCode(code string) (username string, ok bool) {
 	log.Printf("UserForCode(%v)", code)
-	return oa.userFor(code, oa.Codes, &oa.CodesLock)
+
+	if meta, err := oa.Storage.RetrieveCode(code); err != nil {
+		return "", false
+	} else {
+		return meta.Username, true
+	}
 }
 
 func (oa *fedoauther) UserForToken(token string) (username string, ok bool) {
 	log.Printf("UserForToken(%v)", token)
-	return oa.userFor(token, oa.Tokens, &oa.TokensLock)
-}
 
-func (oa *fedoauther) userFor(key string, m map[string]string, l *sync.Mutex) (string, bool) {
-	l.Lock()
-	defer l.Unlock()
-
-	username, ok := m[key]
-	return username, ok
+	if meta, err := oa.Storage.RetrieveToken(token); err != nil {
+		return "", false
+	} else {
+		return meta.Username, true
+	}
 }
 
 func (oa *fedoauther) validateAuthorize(w http.ResponseWriter, r *http.Request) (handled bool) {
