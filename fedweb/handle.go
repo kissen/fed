@@ -5,9 +5,9 @@ import (
 	"github.com/go-fed/activity/streams"
 	"github.com/gorilla/mux"
 	"github.com/kissen/httpstatus"
-	"gitlab.cs.fau.de/kissen/fed/fedutil"
 	"gitlab.cs.fau.de/kissen/fed/fedweb/fedclient"
 	"gitlab.cs.fau.de/kissen/fed/fedweb/wocab"
+	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -320,7 +320,7 @@ func Error(w http.ResponseWriter, r *http.Request, status int, cause error, data
 		errorData["Cause"] = cause.Error()
 	}
 
-	renderData := fedutil.SumMaps(data, errorData)
+	renderData := sumMaps(data, errorData)
 
 	// render with correct status
 
@@ -351,10 +351,10 @@ func Remote(w http.ResponseWriter, r *http.Request, iri *url.URL) {
 }
 
 // Write out a page showing activity pub content accessible via iter.
-func Iter(w http.ResponseWriter, r *http.Request, it fedutil.Iter) {
+func Iter(w http.ResponseWriter, r *http.Request, it fetch.Iter) {
 	// fetch objects
 
-	vs, err := fedutil.FetchIter(it)
+	vs, err := fetch.FetchIters(it)
 	if err != nil {
 		Error(w, r, http.StatusBadGateway, err, nil)
 		return
@@ -392,7 +392,7 @@ func Redirect(w http.ResponseWriter, r *http.Request, target string) {
 func Render(w http.ResponseWriter, r *http.Request, page string, data map[string]interface{}) {
 	// fill in values that are (almost) always needed
 
-	data = fedutil.SumMaps(data)
+	data = sumMaps(data)
 
 	data["Context"] = Context(r)
 	data["SubmitPrompt"] = SubmitPrompt()

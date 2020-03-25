@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/fedutil"
+	"gitlab.cs.fau.de/kissen/fed/fetch"
+	"gitlab.cs.fau.de/kissen/fed/prop"
 	"golang.org/x/sync/errgroup"
 	"html/template"
 	"log"
@@ -94,7 +95,7 @@ func wrap(target vocab.Type) (*webVocab, error) {
 		page = "res/ordered_collection_page.fragment.tmpl"
 
 	default:
-		log.Printf("type=%v not implemented", fedutil.Type(v))
+		log.Printf("type=%v not implemented", prop.Type(v))
 		page = "res/not_implemented.fragment.tmpl"
 	}
 
@@ -142,7 +143,7 @@ func Fetch(target *url.URL) (WebVocab, error) {
 
 	// get the object from the network
 
-	obj, err := fedutil.Fetch(target)
+	obj, err := fetch.Fetch(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "dereference failed")
 	}
@@ -306,7 +307,12 @@ func (v *webVocab) actor() (vocab.ActivityStreamsPerson, error) {
 
 	// look up the actor
 
-	actor, err := fedutil.FetchString(*addr)
+	iri, err := url.Parse(*addr)
+	if err != nil {
+		return nil, errors.Wrap(err, "bad address")
+	}
+
+	actor, err := fetch.Fetch(iri)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not fetch identified actor")
 	}
@@ -337,12 +343,18 @@ func (v *webVocab) object() ([]*webVocab, error) {
 	}
 }
 
-// Iterate over property (with fedutil.Begin) and wrap all returned
+// Iterate over property (with fetch.Begin) and wrap all returned
 // objects.
 func (v *webVocab) wrapAll(property interface{}) ([]*webVocab, error) {
-	if vs, err := fedutil.FetchAll(property); err != nil {
-		return nil, errors.Wrap(err, "cannot fetch from collection")
-	} else {
-		return wraps(vs...)
+	it, err := fetch.Begin(property)
+	if err != nil {
+		return nil, err
 	}
+
+	vs, err := fetch.FetchIters(it)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot fetch from collection")
+	}
+
+	return wraps(vs...)
 }

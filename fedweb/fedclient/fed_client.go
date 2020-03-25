@@ -5,7 +5,8 @@ import (
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/pkg/errors"
-	"gitlab.cs.fau.de/kissen/fed/fedutil"
+	"gitlab.cs.fau.de/kissen/fed/fetch"
+	"gitlab.cs.fau.de/kissen/fed/prop"
 	"net/url"
 	"time"
 )
@@ -16,28 +17,28 @@ type FedClient interface {
 
 	// Return the stream iterator. Stream is a combination of both
 	// inbox and outbox.
-	Stream() (fedutil.Iter, error)
+	Stream() (fetch.Iter, error)
 
 	// Return an iterator of the users inbox.
-	Inbox() (fedutil.Iter, error)
+	Inbox() (fetch.Iter, error)
 
 	// Return the IRI of the users inbox.
 	InboxIRI() *url.URL
 
 	// Return an iterator of the users outbox.
-	Outbox() (fedutil.Iter, error)
+	Outbox() (fetch.Iter, error)
 
 	// Return the IRI of the users outbox.
 	OutboxIRI() *url.URL
 
 	// Return an iterator of the objects this user liked.
-	Liked() (fedutil.Iter, error)
+	Liked() (fetch.Iter, error)
 
 	// Return the IRI of the users liked collection.
 	LikedIRI() *url.URL
 
 	// Return an iterator of actors that follow the user.
-	Followers() (fedutil.Iter, error)
+	Followers() (fetch.Iter, error)
 
 	// Return the IRI to the collection of actors that follow this user.
 	FollowersIRI() *url.URL
@@ -63,7 +64,7 @@ func New(actorAddr string) (_ FedClient, err error) {
 		return nil, errors.Wrap(err, "bad actor address")
 	}
 
-	obj, err := fedutil.Fetch(fc.iri)
+	obj, err := fetch.Fetch(fc.iri)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (fc *fedclient) IRI() *url.URL {
 	return fc.iri
 }
 
-func (fc *fedclient) Stream() (fedutil.Iter, error) {
+func (fc *fedclient) Stream() (fetch.Iter, error) {
 	in, err := fc.Inbox()
 	if err != nil {
 		return nil, err
@@ -111,10 +112,10 @@ func (fc *fedclient) Stream() (fedutil.Iter, error) {
 		return nil, err
 	}
 
-	return fedutil.Begins(in, out)
+	return fetch.Begins(in, out)
 }
 
-func (fc *fedclient) Inbox() (fedutil.Iter, error) {
+func (fc *fedclient) Inbox() (fetch.Iter, error) {
 	return fc.fetchCollection(fc.inboxIRI)
 }
 
@@ -122,7 +123,7 @@ func (fc *fedclient) InboxIRI() *url.URL {
 	return fc.inboxIRI
 }
 
-func (fc *fedclient) Outbox() (fedutil.Iter, error) {
+func (fc *fedclient) Outbox() (fetch.Iter, error) {
 	return fc.fetchCollection(fc.outboxIRI)
 }
 
@@ -130,7 +131,7 @@ func (fc *fedclient) OutboxIRI() *url.URL {
 	return fc.inboxIRI
 }
 
-func (fc *fedclient) Liked() (fedutil.Iter, error) {
+func (fc *fedclient) Liked() (fetch.Iter, error) {
 	return fc.fetchCollection(fc.likedIRI)
 }
 
@@ -138,7 +139,7 @@ func (fc *fedclient) LikedIRI() *url.URL {
 	return fc.inboxIRI
 }
 
-func (fc *fedclient) Followers() (fedutil.Iter, error) {
+func (fc *fedclient) Followers() (fetch.Iter, error) {
 	return fc.fetchCollection(fc.followersIRI)
 }
 
@@ -157,7 +158,7 @@ func (fc *fedclient) Create(event vocab.Type) error {
 	// get the published date for the Create; if none is available,
 	// use the current time
 
-	publishedDate, err := fedutil.Published(event)
+	publishedDate, err := prop.Published(event)
 	if err != nil {
 		publishedDate = time.Now()
 	}
@@ -180,19 +181,19 @@ func (fc *fedclient) Create(event vocab.Type) error {
 
 	// send it out
 
-	return fedutil.Submit(fc.outboxIRI, create)
+	return fetch.Submit(create, fc.outboxIRI)
 }
 
-func (fc *fedclient) fetchCollection(target *url.URL) (fedutil.Iter, error) {
-	collection, err := fedutil.Fetch(target)
+func (fc *fedclient) fetchCollection(target *url.URL) (fetch.Iter, error) {
+	collection, err := fetch.Fetch(target)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not fetch collection")
 	}
 
-	return fedutil.Begin(collection)
+	return fetch.Begin(collection)
 }
 
-func getIRI(ie fedutil.IterEntry) (*url.URL, error) {
+func getIRI(ie fetch.IterEntry) (*url.URL, error) {
 	if !ie.HasAny() || !ie.IsIRI() {
 		return nil, errors.New("not an IRI")
 	} else {
