@@ -3,7 +3,7 @@ package fetch
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/errors"
 	"io/ioutil"
 	"log"
 	"net/http"

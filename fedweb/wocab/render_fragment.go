@@ -2,7 +2,7 @@ package wocab
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/errors"
 	"html/template"
 )
 

@@ -3,7 +3,7 @@ package wocab
 import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
-	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"gitlab.cs.fau.de/kissen/fed/prop"
 	"golang.org/x/sync/errgroup"

@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/errors"
 	"net/url"
 )
 

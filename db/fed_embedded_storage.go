@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
-	"github.com/pkg/errors"
+	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/marshal"
 	"go.etcd.io/bbolt"
 	"log"
+	"net/http"
 	"net/url"
 )
 
@@ -210,7 +211,7 @@ func (fs *FedEmbeddedStorage) retrieve(bucket []byte, key string) ([]byte, error
 		}
 
 		if bytes = b.Get([]byte(key)); bytes == nil {
-			return fmt.Errorf("no entry for key=%v in bucket=%v", key, string(bucket))
+			return errors.NewfWith(http.StatusNotFound, "no entry for key=%v in bucket=%v", key, string(bucket))
 		}
 
 		return nil
