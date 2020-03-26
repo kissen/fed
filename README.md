@@ -4,22 +4,12 @@ Trying to build a server for [ActivityPub](https://www.w3.org/TR/activitypub/)
 that can handle all objects defined in the standard. Development happens in
 the `experiment/` branches, `master` doesn't even build right now.
 
-* `fedd` contains code for the backend so to speak, the federation daemon.
-
-* `fedweb` contains code for a basic web interface that speaks to
-  `fedd`. Ideally it should be able to speak with any ActivityPub
-  service.
-
-* `fedutil` contains shared code between `fedd` and `fedwweb`. In
-  particular, it contains convenience functions that work on types
-  from the `go-fed/activity` library.
-
 ## What I Would Like
 
 Current services like [Mastodon](https://joinmastodon.org/) or
 [Pleroma](https://pleroma.social/) do a bit too much for my liking and
 are difficult to install.  I would like `fed` to be easy to deploy and
-self-host. The core service should be without any user interface,
+self-host. The core service should be with only a minimal user interface,
 leaving it up to the user how to interact with it.
 
 I'm not sure if I will ever create something working. I do know that I
@@ -67,9 +57,11 @@ licensed under the following terms.
 	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+The affected files are in the `ap/` directory.
+
 ### Feather
 
-This code contains icons the [Feather](https://feathericons.com/) icon set
+This code contains icons from the [Feather](https://feathericons.com/) icon set
 licensed under the following terms.
 
 	The MIT License (MIT)
