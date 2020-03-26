@@ -1,4 +1,4 @@
-package main
+package template
 
 // Given maps ms, return a new map that contains the sum of all of
 // those maps.

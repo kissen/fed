@@ -1,11 +1,10 @@
-package main
+package template
 
 import "math/rand"
 
 var submitPrompts = []string{
 	"What are you thinking about?",
 	"What would you like to tell the world?",
-	"What made you happy today?",
 	"What are you doing right now?",
 	"What are you planning for tomorrow?",
 }

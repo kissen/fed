@@ -7,7 +7,7 @@ import (
 	"github.com/go-fed/activity/pub"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/fedweb/fedclient"
+	"gitlab.cs.fau.de/kissen/fed/template/fedclient"
 	"net/http"
 	"strings"
 )

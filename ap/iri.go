@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/kissen/stringset"
 	"gitlab.cs.fau.de/kissen/fed/config"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
@@ -277,15 +278,11 @@ func (iri IRI) owner(tail string) (string, error) {
 // that may not appear as first IRI component because it has other
 // functions.
 func (iri IRI) isReserved(username string) bool {
-	reserved := []string{
-		"storage", "static", "oauth",
-	}
+	reserved := stringset.NewWith(
+		"storage", "static", "oauth", "stream", "liked",
+		"following", "followers", "login", "logout", "remote",
+		"submit",
+	)
 
-	for _, r := range reserved {
-		if username == r {
-			return true
-		}
-	}
-
-	return false
+	return reserved.Contains(username)
 }

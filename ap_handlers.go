@@ -13,7 +13,7 @@ import (
 // outbox requests for ActivityPub.
 type BoxHandler func(context.Context, http.ResponseWriter, *http.Request) (bool, error)
 
-func OutboxHandler(w http.ResponseWriter, r *http.Request) {
+func ApGetPostOutbox(w http.ResponseWriter, r *http.Request) {
 	log.Printf("OutboxHandler(%v)", r.URL)
 
 	if done, err := HandleOutboxWithPubActor(w, r); err != nil {
@@ -26,7 +26,7 @@ func OutboxHandler(w http.ResponseWriter, r *http.Request) {
 	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", nil, http.StatusNotAcceptable)
 }
 
-func InboxHandler(w http.ResponseWriter, r *http.Request) {
+func ApGetPostInbox(w http.ResponseWriter, r *http.Request) {
 	log.Printf("InboxHandler(%v)", r.URL)
 
 	if done, err := HandleInboxWithPubActor(w, r); err != nil {
@@ -39,7 +39,7 @@ func InboxHandler(w http.ResponseWriter, r *http.Request) {
 	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", nil, http.StatusNotAcceptable)
 }
 
-func ActivityHandler(w http.ResponseWriter, r *http.Request) {
+func ApGetPostActivity(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ActivityHandler(%v)", r.URL)
 
 	if done, err := HandleWithHandleFunc(w, r); err != nil {
@@ -50,6 +50,10 @@ func ActivityHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", nil, http.StatusNotAcceptable)
+}
+
+func ApGetRemote(w http.ResponseWriter, r *http.Request) {
+	Error(w, r, http.StatusNotImplemented)
 }
 
 // Try to handle the given HTTP request for an outbox with go-fed.

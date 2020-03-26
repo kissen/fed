@@ -1,4 +1,4 @@
-package wocab
+package template
 
 import (
 	"github.com/microcosm-cc/bluemonday"

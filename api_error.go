@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/kissen/httpstatus"
 	"gitlab.cs.fau.de/kissen/fed/errors"
 	"log"
 	"net/http"
@@ -41,13 +40,10 @@ func ApiError(w http.ResponseWriter, r *http.Request, description string, err er
 
 	// write out response
 
-	http.Error(w, string(bs), status)
-}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
 
-func ApiNotFound(w http.ResponseWriter, r *http.Request) {
-	ApiError(w, r, httpstatus.Describe(http.StatusNotFound), nil, http.StatusNotFound)
-}
-
-func ApiNotAllowed(w http.ResponseWriter, r *http.Request) {
-	ApiError(w, r, httpstatus.Describe(http.StatusMethodNotAllowed), nil, http.StatusMethodNotAllowed)
+	if _, err := w.Write(bs); err != nil {
+		log.Printf("writing err json to client failed: %v", err)
+	}
 }

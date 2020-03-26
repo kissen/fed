@@ -68,20 +68,31 @@ func InstallAdminHandlers(s db.FedStorage, router *mux.Router) {
 // Install the actually interesting handlers. These handlers will differentiate
 // between Content-Type/Accept headers and either send out JSON for ActivityPub
 // or a gaudy web interface instead.
-func InstallApHandlers(storage db.FedStorage, router *mux.Router) {
-	router.HandleFunc("/{username:[A-Za-z]+}/outbox", OutboxHandler).Methods("GET", "POST")
-	router.HandleFunc("/{username:[A-Za-z]+}/inbox", InboxHandler).Methods("GET", "POST")
+func InstallSplitHandlers(storage db.FedStorage, router *mux.Router) {
+	// this is kind of a mess
+	router.HandleFunc("/{username:[A-Za-z]+}/outbox", GetPostOutbox).Methods("GET", "POST")
+	router.HandleFunc("/{username:[A-Za-z]+}/inbox", GetPostInbox).Methods("GET", "POST")
+	router.HandleFunc("/", GetIndex).Methods("GET")
+	router.HandleFunc("/stream", WebGetStream).Methods("GET")
+	router.HandleFunc("/liked", GetLiked).Methods("GET")
+	router.HandleFunc("/following", GetFollowing).Methods("GET")
+	router.HandleFunc("/followers", GetFollowers).Methods("GET")
+	router.HandleFunc("/login", GetLogin).Methods("GET")
+	router.HandleFunc("/login", PostLogin).Methods("POST")
+	router.HandleFunc("/logout", PostLogout).Methods("POST")
+	router.HandleFunc("/remote/{remotepath:.+}", GetRemote).Methods("GET")
+	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
+	router.HandleFunc("/submit", PostSubmit).Methods("POST")
 
-	// catchall
-	router.PathPrefix("/").HandlerFunc(ActivityHandler).Methods("GET", "POST")
+	// catchall for activity pub
+	router.PathPrefix("/").HandlerFunc(ApGetPostActivity).Methods("GET", "POST")
 }
 
 // Install the different error handler. While the defaults from gorilla are
 // reasonable, we can be more specific.
 func InstallErrorHandlers(router *mux.Router) {
-	// TODO: differentiate by Accept header
-	router.NotFoundHandler = router.NewRoute().HandlerFunc(ApiNotFound).GetHandler()
-	router.MethodNotAllowedHandler = router.NewRoute().HandlerFunc(ApiNotAllowed).GetHandler()
+	router.NotFoundHandler = router.NewRoute().HandlerFunc(NotFound).GetHandler()
+	router.MethodNotAllowedHandler = router.NewRoute().HandlerFunc(MethodNotAllowed).GetHandler()
 }
 
 // Install middleware that runs before every single actual HTTP handler.
@@ -103,7 +114,8 @@ func main() {
 
 	InstallOAuthHandlers(oa, sr)
 	InstallAdminHandlers(storage, sr)
-	InstallApHandlers(storage, sr) // includes catchall
+	InstallSplitHandlers(storage, sr) // includes catchall
+
 	InstallErrorHandlers(router)
 	InstallMiddleware(storage, router)
 
