@@ -42,6 +42,8 @@ func New(target vocab.Type) (WebVocab, error) {
 	return wrap(target)
 }
 
+// Return wrapped versions of all targets. Returns an error
+// if at least one of the conversations failed.
 func News(targets ...vocab.Type) ([]WebVocab, error) {
 	if ws, err := wraps(targets...); err != nil {
 		return nil, err
@@ -54,9 +56,10 @@ func News(targets ...vocab.Type) ([]WebVocab, error) {
 	}
 }
 
+// Wrap target into a webVocab. This involves dereferencing
+// target if it's just an IRI.
 func wrap(target vocab.Type) (*webVocab, error) {
 	// do not allow nil arguments
-
 	if target == nil {
 		return nil, errors.New("target is nil")
 	}
@@ -64,23 +67,19 @@ func wrap(target vocab.Type) (*webVocab, error) {
 	// serialize the object for quick access; this is a quick but
 	// dirty way to get around the verbose go-fed api while hacking
 	// on the proof of concept...
-
 	mappings, err := target.Serialize()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get mappings")
 	}
 
 	// create the base struct
-
 	wocab := &webVocab{
 		target:   target,
 		mappings: mappings,
 	}
 
 	// pick the right template
-
 	var page string
-
 	switch v := target.(type) {
 	case vocab.ActivityStreamsNote:
 		page = "res/note.fragment.tmpl"
@@ -100,19 +99,18 @@ func wrap(target vocab.Type) (*webVocab, error) {
 	}
 
 	// render the template
-
 	html, err := renderFragement(page, wocab)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot generate html")
 	}
-
 	wocab.fragment = html
 
 	// return the now fully filled out struct
-
 	return wocab, nil
 }
 
+// Wrap all targets into webVocabs. Returns an error if at least
+// one of the conversations failed.
 func wraps(targets ...vocab.Type) ([]*webVocab, error) {
 	group := &errgroup.Group{}
 	ws := make([]*webVocab, len(targets))
@@ -158,7 +156,7 @@ func Fetch(target *url.URL) (WebVocab, error) {
 	return wocab, nil
 }
 
-// Return the HTML fragment.
+// Return the HTML fragment for embedding in HTML pages.
 func (v *webVocab) Fragment() template.HTML {
 	return v.fragment
 }
