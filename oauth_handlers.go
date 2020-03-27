@@ -7,6 +7,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,19 +21,7 @@ func GetOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// HACK AROUND THE FAC THAT BASIC AUTH DOES NOT TRIGGER POST
-	//
-	// ANYWAYS; THIS WORKS; THINK ABOUT MERGING FED AND FEDWEB?!
-	// OR WRITE UI/LOGIN PROMPT
-	if _, _, ok := r.BasicAuth(); ok {
-		PostOAuthAuthorize(w, r)
-		return
-	}
-
-	w.Header().Add("WWW-Authenticate", `Basic realm="Gondor"`)
-	w.WriteHeader(http.StatusUnauthorized)
-
-	w.Write([]byte("Please Authenticate. Thank you!\n"))
+	template.Render(w, r, "res/authorize.page.tmpl", nil)
 }
 
 func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
@@ -44,9 +33,21 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	// get login credentials
 
-	username, password, ok := r.BasicAuth()
+	username, ok := FormValue(r, "username")
 	if !ok {
-		GetOAuthAuthorize(w, r) // try again
+		fedcontext.FlashWarning(r, "missing username")
+		fedcontext.Status(r, http.StatusBadRequest)
+
+		GetOAuthAuthorize(w, r)
+		return
+	}
+
+	password, ok := FormValue(r, "password")
+	if !ok {
+		fedcontext.FlashWarning(r, "missing password")
+		fedcontext.Status(r, http.StatusBadRequest)
+
+		GetOAuthAuthorize(w, r)
 		return
 	}
 
@@ -54,12 +55,18 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	user, err := fedcontext.Context(r).Storage.RetrieveUser(username)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		fedcontext.FlashError(r, "no such user")
+		fedcontext.Status(r, http.StatusUnauthorized)
+
+		GetOAuthAuthorize(w, r)
 		return
 	}
 
 	if !user.PasswordOK(password) {
-		http.Error(w, "bad password", http.StatusUnauthorized)
+		fedcontext.FlashError(r, "bad password")
+		fedcontext.Status(r, http.StatusUnauthorized)
+
+		GetOAuthAuthorize(w, r)
 		return
 	}
 
@@ -67,7 +74,7 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	code, err := random()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ApiError(w, r, "", err, http.StatusBadRequest)
 		return
 	}
 
@@ -75,13 +82,13 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	redirectUris, ok := r.URL.Query()["redirect_uri"]
 	if !ok {
-		http.Error(w, "missing redirect_uri", http.StatusBadRequest)
+		ApiError(w, r, "missing redirect_uri", nil, http.StatusBadRequest)
 		return
 	}
 
 	redirect, err := url.Parse(redirectUris[0])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ApiError(w, r, "", err, http.StatusBadRequest)
 		return
 	}
 
@@ -98,7 +105,7 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fedcontext.Context(r).Storage.StoreCode(&c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ApiError(w, r, "", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -120,7 +127,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	qs, err := query(args, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ApiError(w, r, "", err, http.StatusBadRequest)
 		return
 	}
 
@@ -130,7 +137,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 	grantType := qs["grant_type"]
 
 	if grantType != "authorization_code" {
-		http.Error(w, "unsupported grant_type", http.StatusBadRequest)
+		ApiError(w, r, "unsupported grant_type", nil, http.StatusBadRequest)
 		return
 	}
 
@@ -138,7 +145,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	codemeta, err := fedcontext.Context(r).Storage.RetrieveCode(code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		ApiError(w, r, "", err, http.StatusUnauthorized)
 		return
 	}
 
@@ -146,7 +153,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	token, err := random()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ApiError(w, r, "", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -157,7 +164,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fedcontext.Context(r).Storage.StoreToken(&tokenmeta); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ApiError(w, r, "", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -172,7 +179,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	replybytes, err := json.Marshal(&reply)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ApiError(w, r, "", err, http.StatusInternalServerError)
 		return
 	}
 
@@ -197,12 +204,12 @@ func validateOAuthAuthorize(w http.ResponseWriter, r *http.Request) (ok bool) {
 
 	ps, err := query(ks, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		ApiError(w, r, "validation error", err, http.StatusInternalServerError)
 		return true
 	}
 
 	if ps["response_type"] != "code" {
-		http.Error(w, "unsupported response_type", http.StatusBadRequest)
+		ApiError(w, r, "unsupported response_type", nil, http.StatusBadRequest)
 		return true
 	}
 

@@ -1,0 +1,20 @@
+{{template "base" .}}
+
+{{define "title"}}
+	Authorize for Remote Instance
+{{end}}
+
+{{define "body"}}
+	<form class="loginform" method="post">
+		<input type="text" name="username" placeholder="Username">
+		<input type="password" name="password" placeholder="Password">
+
+		<p>
+			You are about to authorize a remote server to do
+			pretty much anything on your behalf. Think
+			before you proceed.
+		<p>
+
+		<input type="submit" value="Authorize">
+	</form>
+{{end}}

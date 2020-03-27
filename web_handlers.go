@@ -135,17 +135,16 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 
 	// check whether we have valid input
 
-	username := strings.TrimSpace(r.FormValue("username"))
-	addr := strings.TrimSpace(r.FormValue("iri"))
-
-	if len(username) == 0 {
+	username, ok := FormValue(r, "username")
+	if !ok {
 		fedcontext.FlashWarning(r, "missing username")
 		fedcontext.Status(r, http.StatusBadRequest)
 		WebGetLogin(w, r)
 		return
 	}
 
-	if len(addr) == 0 {
+	addr, ok := FormValue(r, "iri")
+	if !ok {
 		fedcontext.FlashWarning(r, "missing actor IRI")
 		fedcontext.Status(r, http.StatusBadRequest)
 		WebGetLogin(w, r)
@@ -196,9 +195,9 @@ func WebPostLogout(w http.ResponseWriter, r *http.Request) {
 func WebPostSubmit(w http.ResponseWriter, r *http.Request) {
 	// check whether we have valid input
 
-	payload := strings.TrimSpace(r.FormValue("postinput"))
+	payload, ok := FormValue(r, "postinput")
 
-	if len(payload) == 0 {
+	if !ok {
 		fedcontext.FlashWarning(r, "cowardly refusing to create an empty note")
 		fedcontext.Status(r, http.StatusBadRequest)
 

@@ -10,6 +10,10 @@ import (
 // Answer the HTTP request to some JSON with a nice JSON-encoded error.
 // This is similar to http.Error except the client has less trouble
 // parsing the error.
+//
+// TODO: Replace description & err with a single Stringer argument?!
+// Or some varargs? I don't now... But the current signature kinda
+// sucks; what is the difference between description and err after all?
 func ApiError(w http.ResponseWriter, r *http.Request, description string, err error, status int) {
 	// if err contains a status code, use that instead
 
