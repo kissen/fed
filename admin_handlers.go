@@ -2,16 +2,14 @@ package main
 
 import (
 	"gitlab.cs.fau.de/kissen/fed/ap"
-	"gitlab.cs.fau.de/kissen/fed/db"
 	"log"
 	"net/http"
 )
 
-func newAdminHandler(admin *ap.FedAdminProtocol, store db.FedStorage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("AdminHandler(%v)", r.URL)
+func PutUser(w http.ResponseWriter, r *http.Request) {
+	log.Printf("PutUser(%v)", r.URL)
 
-		// AdminProtocol takes care of everything :)
-		admin.Handle(r.Context(), w, r)
-	}
+	// AdminProtocol takes care of everything :)
+	adm := &ap.FedAdminProtocol{}
+	adm.Handle(r.Context(), w, r)
 }

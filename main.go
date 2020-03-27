@@ -4,7 +4,6 @@ import (
 	"github.com/go-fed/activity/pub"
 	"github.com/gorilla/mux"
 	"gitlab.cs.fau.de/kissen/fed/ap"
-	"gitlab.cs.fau.de/kissen/fed/auth"
 	"gitlab.cs.fau.de/kissen/fed/config"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
@@ -51,24 +50,23 @@ func CreateProxies() (pub.FederatingActor, pub.HandlerFunc) {
 
 // Install the OAuth2 handlers. These handlers take care of authorization
 // using codes and tokens are quite important for useful federation.
-func InstallOAuthHandlers(oa auth.FedOAuther, router *mux.Router) {
-	router.HandleFunc("/oauth/authorize", oa.GetAuthorize).Methods("GET")
-	router.HandleFunc("/oauth/authorize", oa.PostAuthorize).Methods("POST")
-	router.HandleFunc("/oauth/token", oa.PostToken).Methods("POST")
+func InstallOAuthHandlers(router *mux.Router) {
+	router.HandleFunc("/oauth/authorize", GetOAuthAuthorize).Methods("GET")
+	router.HandleFunc("/oauth/authorize", PostOAuthAuthorize).Methods("POST")
+	router.HandleFunc("/oauth/token", PostOAuthToken).Methods("POST")
 }
 
 // Install the admin handlers. The idea is that we write some admin tool
 // that runs on the same machine as fed itself interacts with these admin handlers.
 // I think that's easier than bothering with a web gui for configuration for now.
-func InstallAdminHandlers(s db.FedStorage, router *mux.Router) {
-	a := &ap.FedAdminProtocol{}
-	router.HandleFunc(`/{username:[A-Za-z]+}`, newAdminHandler(a, s)).Methods("PUT")
+func InstallAdminHandlers(router *mux.Router) {
+	router.HandleFunc(`/{username:[A-Za-z]+}`, PutUser).Methods("PUT")
 }
 
 // Install the actually interesting handlers. These handlers will differentiate
 // between Content-Type/Accept headers and either send out JSON for ActivityPub
 // or a gaudy web interface instead.
-func InstallSplitHandlers(storage db.FedStorage, router *mux.Router) {
+func InstallSplitHandlers(router *mux.Router) {
 	// this is kind of a mess
 	router.HandleFunc("/{username:[A-Za-z]+}/outbox", GetPostOutbox).Methods("GET", "POST")
 	router.HandleFunc("/{username:[A-Za-z]+}/inbox", GetPostInbox).Methods("GET", "POST")
@@ -107,14 +105,12 @@ func main() {
 	storage := OpenDatabase()
 	defer storage.Close()
 
-	oa := auth.NewFedOAuther(storage)
-
 	router := mux.NewRouter().StrictSlash(false)
 	sr := router.PathPrefix(config.Get().Base.Path).Subrouter()
 
-	InstallOAuthHandlers(oa, sr)
-	InstallAdminHandlers(storage, sr)
-	InstallSplitHandlers(storage, sr) // includes catchall
+	InstallOAuthHandlers(sr)
+	InstallAdminHandlers(sr)
+	InstallSplitHandlers(sr) // includes catchall
 
 	InstallErrorHandlers(router)
 	InstallMiddleware(storage, router)

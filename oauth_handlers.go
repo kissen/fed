@@ -1,4 +1,4 @@
-package auth
+package main
 
 import (
 	"crypto/rand"
@@ -6,55 +6,17 @@ import (
 	"fmt"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"log"
 	"net/http"
 	"net/url"
 	"time"
 )
 
-// https://docs.joinmastodon.org/methods/apps/oauth/
-// https://www.oauth.com/oauth2-servers/server-side-apps/authorization-code/
-// https://github.com/go-oauth2/oauth2/blob/master/example/server/server.go
-// https://github.com/openshift/osin
-// https://auth0.com/docs/protocols/oauth2#how-response-type-works
+func GetOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetOAuthAuthorize()")
 
-type FedOAuther interface {
-	// HTTP handler that takes care of GET requests to the /authorize
-	// endpoint.
-	GetAuthorize(w http.ResponseWriter, r *http.Request)
-
-	// HTTP handler that takes care of the POST requests to the /authorize
-	// endpoint.
-	PostAuthorize(w http.ResponseWriter, r *http.Request)
-
-	// HTTP handler that takes care of PoSt requests to the /token
-	// endpoint.
-	PostToken(w http.ResponseWriter, r *http.Request)
-
-	// Return the registerted user for the given code. If the code
-	// is invalid or expired, ok will be false.
-	UserForCode(code string) (username string, ok bool)
-
-	// Return the registerted user for the given token. If the token
-	// is invalid or expired, ok will be false.
-	UserForToken(token string) (username string, ok bool)
-}
-
-type fedoauther struct {
-	// Storage for accessing user database.
-	Storage db.FedStorage
-}
-
-func NewFedOAuther(storage db.FedStorage) FedOAuther {
-	return &fedoauther{
-		Storage: storage,
-	}
-}
-
-func (oa *fedoauther) GetAuthorize(w http.ResponseWriter, r *http.Request) {
-	log.Printf("GetAuthorize()")
-
-	if done := oa.validateAuthorize(w, r); done {
+	if done := validateOAuthAuthorize(w, r); done {
 		return
 	}
 
@@ -63,7 +25,7 @@ func (oa *fedoauther) GetAuthorize(w http.ResponseWriter, r *http.Request) {
 	// ANYWAYS; THIS WORKS; THINK ABOUT MERGING FED AND FEDWEB?!
 	// OR WRITE UI/LOGIN PROMPT
 	if _, _, ok := r.BasicAuth(); ok {
-		oa.PostAuthorize(w, r)
+		PostOAuthAuthorize(w, r)
 		return
 	}
 
@@ -73,10 +35,10 @@ func (oa *fedoauther) GetAuthorize(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Please Authenticate. Thank you!\n"))
 }
 
-func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
-	log.Printf("PostAuthorize()")
+func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
+	log.Printf("PostOAuthAuthorize()")
 
-	if done := oa.validateAuthorize(w, r); done {
+	if done := validateOAuthAuthorize(w, r); done {
 		return
 	}
 
@@ -84,13 +46,13 @@ func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	username, password, ok := r.BasicAuth()
 	if !ok {
-		oa.GetAuthorize(w, r) // try again
+		GetOAuthAuthorize(w, r) // try again
 		return
 	}
 
 	// check whether credentials are valid
 
-	user, err := oa.Storage.RetrieveUser(username)
+	user, err := fedcontext.Context(r).Storage.RetrieveUser(username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -103,7 +65,7 @@ func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	// generate a code
 
-	code, err := oa.random()
+	code, err := random()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -135,7 +97,7 @@ func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
 		IssuedOn: time.Now().UTC(),
 	}
 
-	if err := oa.Storage.StoreCode(&c); err != nil {
+	if err := fedcontext.Context(r).Storage.StoreCode(&c); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -146,8 +108,8 @@ func (oa *fedoauther) PostAuthorize(w http.ResponseWriter, r *http.Request) {
 	log.Printf("recorded code=%v for user=%v", code, user.Name)
 }
 
-func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
-	log.Printf("PostToken()")
+func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
+	log.Printf("PostOAuthToken()")
 
 	// parse out args
 
@@ -156,7 +118,7 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 		"code", "grant_type",
 	}
 
-	qs, err := oa.query(args, r)
+	qs, err := query(args, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -174,7 +136,7 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 
 	// look up user
 
-	codemeta, err := oa.Storage.RetrieveCode(code)
+	codemeta, err := fedcontext.Context(r).Storage.RetrieveCode(code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -182,7 +144,7 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 
 	// create token
 
-	token, err := oa.random()
+	token, err := random()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -194,7 +156,7 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 		IssuedOn: time.Now().UTC(),
 	}
 
-	if err := oa.Storage.StoreToken(&tokenmeta); err != nil {
+	if err := fedcontext.Context(r).Storage.StoreToken(&tokenmeta); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -226,32 +188,14 @@ func (oa *fedoauther) PostToken(w http.ResponseWriter, r *http.Request) {
 	log.Printf("recorded token=%v for user=%v", token, codemeta.Username)
 }
 
-func (oa *fedoauther) UserForCode(code string) (username string, ok bool) {
-	log.Printf("UserForCode(%v)", code)
-
-	if meta, err := oa.Storage.RetrieveCode(code); err != nil {
-		return "", false
-	} else {
-		return meta.Username, true
-	}
-}
-
-func (oa *fedoauther) UserForToken(token string) (username string, ok bool) {
-	log.Printf("UserForToken(%v)", token)
-
-	if meta, err := oa.Storage.RetrieveToken(token); err != nil {
-		return "", false
-	} else {
-		return meta.Username, true
-	}
-}
-
-func (oa *fedoauther) validateAuthorize(w http.ResponseWriter, r *http.Request) (handled bool) {
+// Validate a request to /oauth/authorize, that is look at whether all
+// mandatory query parameters are present.
+func validateOAuthAuthorize(w http.ResponseWriter, r *http.Request) (ok bool) {
 	ks := []string{
 		"response_type", "client_id", "redirect_uri",
 	}
 
-	ps, err := oa.query(ks, r)
+	ps, err := query(ks, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return true
@@ -265,7 +209,10 @@ func (oa *fedoauther) validateAuthorize(w http.ResponseWriter, r *http.Request) 
 	return false
 }
 
-func (oa *fedoauther) query(keys []string, r *http.Request) (params map[string]string, err error) {
+// Given a set of keys, return a map that maps each key to the query
+// parameter value in request r. Returns an r if at least one key
+// in keys is not present in request r.
+func query(keys []string, r *http.Request) (params map[string]string, err error) {
 	params = make(map[string]string)
 	q := r.URL.Query()
 
@@ -286,8 +233,9 @@ func (oa *fedoauther) query(keys []string, r *http.Request) (params map[string]s
 	return params, nil
 }
 
-// Return a random string from a secure source.
-func (oa *fedoauther) random() (string, error) {
+// Return a random string from a secure source that is sufficently long
+// for use as OAuth codes or tokens.
+func random() (string, error) {
 	nbytes := 16
 	b := make([]byte, nbytes)
 
