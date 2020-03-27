@@ -4,10 +4,10 @@ import (
 	"github.com/go-fed/activity/pub"
 	"github.com/gorilla/mux"
 	"gitlab.cs.fau.de/kissen/fed/ap"
+	"gitlab.cs.fau.de/kissen/fed/auth"
 	"gitlab.cs.fau.de/kissen/fed/config"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/oauth"
 	"log"
 	"net/http"
 )
@@ -51,7 +51,7 @@ func CreateProxies() (pub.FederatingActor, pub.HandlerFunc) {
 
 // Install the OAuth2 handlers. These handlers take care of authorization
 // using codes and tokens are quite important for useful federation.
-func InstallOAuthHandlers(oa oauth.FedOAuther, router *mux.Router) {
+func InstallOAuthHandlers(oa auth.FedOAuther, router *mux.Router) {
 	router.HandleFunc("/oauth/authorize", oa.GetAuthorize).Methods("GET")
 	router.HandleFunc("/oauth/authorize", oa.PostAuthorize).Methods("POST")
 	router.HandleFunc("/oauth/token", oa.PostToken).Methods("POST")
@@ -107,7 +107,7 @@ func main() {
 	storage := OpenDatabase()
 	defer storage.Close()
 
-	oa := oauth.New(storage)
+	oa := auth.NewFedOAuther(storage)
 
 	router := mux.NewRouter().StrictSlash(false)
 	sr := router.PathPrefix(config.Get().Base.Path).Subrouter()

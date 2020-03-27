@@ -1,4 +1,4 @@
-package oauth
+package auth
 
 import (
 	"crypto/rand"
@@ -45,7 +45,7 @@ type fedoauther struct {
 	Storage db.FedStorage
 }
 
-func New(storage db.FedStorage) FedOAuther {
+func NewFedOAuther(storage db.FedStorage) FedOAuther {
 	return &fedoauther{
 		Storage: storage,
 	}

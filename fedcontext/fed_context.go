@@ -54,8 +54,13 @@ type RequestContext struct {
 	// Initialized to 200.
 	Status int
 
-	// Currently logged in user for this session. Might be nil.
+	// Currently logged in user for this session. Might be nil in
+	// which case nobody is logged in.
 	Client fedclient.FedClient
+
+	// The permissions associated with this request. Might be nil,
+	// in which case this request has no special permissions.
+	Perms *Permissions
 }
 
 // Volatile context of the web interface. This information is only valid
