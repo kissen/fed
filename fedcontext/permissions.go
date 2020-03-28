@@ -2,6 +2,8 @@ package fedcontext
 
 import (
 	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/errors"
+	"net/http"
 )
 
 type Permissions struct {
@@ -17,4 +19,27 @@ type Permissions struct {
 	Like bool
 
 	// tbc
+}
+
+// Given a username and password, try to look up that user in the database.
+// If a correct password was supplied, return the permissions that user has.
+func PermissionsFrom(r *http.Request, username, password string) (*Permissions, error) {
+	storage := Context(r).Storage
+
+	user, err := storage.RetrieveUser(username)
+	if err != nil {
+		return nil, errors.NewWith(http.StatusUnauthorized, "bad username")
+	}
+
+	if !user.PasswordOK(password) {
+		return nil, errors.NewWith(http.StatusUnauthorized, "bad password")
+	}
+
+	p := &Permissions{
+		User:   *user,
+		Create: true,
+		Like:   true,
+	}
+
+	return p, nil
 }

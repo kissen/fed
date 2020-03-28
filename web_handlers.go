@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams"
 	"github.com/gorilla/mux"
+	"gitlab.cs.fau.de/kissen/fed/ap"
+	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/template"
-	"gitlab.cs.fau.de/kissen/fed/template/fedclient"
 	"log"
 	"net/http"
 	"net/url"
@@ -133,6 +134,8 @@ func WebGetLogin(w http.ResponseWriter, r *http.Request) {
 func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 	log.Printf("WebPostLogin(%v)", r.URL)
 
+	context := fedcontext.Context(r)
+
 	// check whether we have valid input
 
 	username, ok := FormValue(r, "username")
@@ -143,33 +146,40 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr, ok := FormValue(r, "iri")
+	password, ok := FormValue(r, "password")
 	if !ok {
-		fedcontext.FlashWarning(r, "missing actor IRI")
+		fedcontext.FlashWarning(r, "missing password")
 		fedcontext.Status(r, http.StatusBadRequest)
 		WebGetLogin(w, r)
 		return
 	}
 
-	// try to create a client; this is to check whether the credentials
-	// are actually working
+	// try to create permissions ; this will ensure that the
+	// credentials are actually correct
 
-	client, err := fedclient.New(addr)
+	_, err := fedcontext.PermissionsFrom(r, username, password)
 	if err != nil {
-		log.Printf(`login username="%v" addr="%v" failed: err="%v"`, username, addr, err)
-
-		fedcontext.FlashWarning(r, "login failed")
+		fedcontext.FlashWarning(r, err.Error())
 		fedcontext.Status(r, http.StatusUnauthorized)
 		WebGetLogin(w, r)
 		return
 	}
 
+	// we have ok permissions; create a code which we'll write into
+	// the cookie
+
+	code, err := db.NewFedOAuthCode(context.Storage, username)
+	if err != nil {
+		template.Error(w, r, http.StatusInternalServerError, err, nil)
+		return
+	}
+
 	// success; set context and write cookie for later
 
-	context := fedcontext.Context(r)
-	context.Client = client
-	context.Username = &username
-	context.ActorIRI = &addr
+	context.Code = &code.Code
+
+	iri := ap.ActorIRI(r.Context(), username)
+	context.ActorIRI = fedcontext.Just(iri.String())
 
 	// we are just logged on; forward to stream page for now
 
@@ -179,15 +189,12 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 
 func WebPostLogout(w http.ResponseWriter, r *http.Request) {
 	// remove credentials and client from context
-
 	context := fedcontext.Context(r)
-
-	context.Username = nil
+	context.Code = nil
 	context.ActorIRI = nil
 	context.Client = nil
 
-	// w/o login we do nothing
-
+	// redirect to login page
 	fedcontext.Flash(r, "logged out")
 	RedirectLocal(w, r, "/login")
 }

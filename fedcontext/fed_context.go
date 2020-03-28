@@ -77,8 +77,9 @@ type WebContext struct {
 // Persistent context of the web interface. This information is restored
 // when installing the context.
 type CookieContext struct {
-	// Username from login, if there is one.
-	Username *string
+	// Code that authenticates this users session. This is identical
+	// to OAuth codes. Might be nil.
+	Code *string
 
 	// ActorIRI from login, if there is one.
 	ActorIRI *string
@@ -135,11 +136,11 @@ func (cc *CookieContext) LoadFromCookie(r *http.Request) error {
 	cc.Warnings = buf.Warnings
 	cc.Errors = buf.Errors
 
-	cc.Username = nil
+	cc.Code = nil
 	cc.ActorIRI = nil
 
-	if !cc.isEmpty(buf.Username) && !cc.isEmpty(buf.ActorIRI) {
-		cc.Username = buf.Username
+	if !cc.isEmpty(buf.Code) && !cc.isEmpty(buf.Code) {
+		cc.Code = buf.Code
 		cc.ActorIRI = buf.ActorIRI
 	}
 
@@ -151,27 +152,23 @@ func (cc *CookieContext) LoadFromCookie(r *http.Request) error {
 // with a call to LoadFromCookie.
 func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 	// prepare a sanitized copy of cc in buf
-
 	var buf CookieContext = *cc
-
-	if cc.isEmpty(buf.Username) || cc.isEmpty(buf.ActorIRI) {
-		buf.Username = nil
+	if cc.isEmpty(buf.Code) || cc.isEmpty(buf.ActorIRI) {
+		buf.Code = nil
 		buf.ActorIRI = nil
 	}
 
 	// conver buf to json
-
 	text, err := json.Marshal(&buf)
 	if err != nil {
 		return errors.Wrap(err, "cookie marshal failed")
 	}
 
-	// convert json to base64
-
+	// convert json to base64; cookies are picky about what
+	// they contain after all
 	encoded := base64.StdEncoding.EncodeToString(text)
 
-	// build up cookie
-
+	// build up cookie struct
 	cookie := http.Cookie{
 		Name:  _COOKIE_CONTEXT_KEY,
 		Value: encoded,
@@ -179,8 +176,8 @@ func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 	}
 
 	// send out cookie wit the response
-
 	http.SetCookie(w, &cookie)
+
 	return nil
 }
 
@@ -188,7 +185,7 @@ func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 // If no user credentials are associated with the context, returns
 // (nil, nil).
 func (cc *CookieContext) NewClient() (fedclient.FedClient, error) {
-	if cc.isEmpty(cc.Username) || cc.isEmpty(cc.ActorIRI) {
+	if cc.isEmpty(cc.Code) || cc.isEmpty(cc.ActorIRI) {
 		return nil, nil
 	}
 
@@ -260,11 +257,6 @@ func Status(r *http.Request, status int) {
 	if fc := Context(r); fc.Status == 0 {
 		fc.Status = status
 	}
-}
-
-// Set username on context.
-func Username(r *http.Request, username string) {
-	Context(r).Username = &username
 }
 
 // Set actor IRI on context.

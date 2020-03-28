@@ -1,17 +1,14 @@
 package main
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/template"
 	"log"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 func GetOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
@@ -53,28 +50,19 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	// check whether credentials are valid
 
-	user, err := fedcontext.Context(r).Storage.RetrieveUser(username)
+	_, err := fedcontext.PermissionsFrom(r, username, password)
 	if err != nil {
-		fedcontext.FlashError(r, "no such user")
+		fedcontext.FlashWarning(r, err.Error())
 		fedcontext.Status(r, http.StatusUnauthorized)
-
-		GetOAuthAuthorize(w, r)
-		return
-	}
-
-	if !user.PasswordOK(password) {
-		fedcontext.FlashError(r, "bad password")
-		fedcontext.Status(r, http.StatusUnauthorized)
-
 		GetOAuthAuthorize(w, r)
 		return
 	}
 
 	// generate a code
 
-	code, err := random()
+	code, err := db.NewFedOAuthCode(fedcontext.Context(r).Storage, username)
 	if err != nil {
-		ApiError(w, r, err, http.StatusBadRequest)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -93,26 +81,13 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	qu := redirect.Query()
-	qu.Add("code", code)
+	qu.Add("code", code.Code)
 	redirect.RawQuery = qu.Encode()
-
-	// all good; write code to db
-
-	c := db.FedOAuthCode{
-		Code:     code,
-		Username: user.Name,
-		IssuedOn: time.Now().UTC(),
-	}
-
-	if err := fedcontext.Context(r).Storage.StoreCode(&c); err != nil {
-		ApiError(w, r, err, http.StatusInternalServerError)
-		return
-	}
 
 	// send out reply
 
 	http.Redirect(w, r, redirect.String(), http.StatusFound)
-	log.Printf("recorded code=%v for user=%v", code, user.Name)
+	log.Printf("recorded code=%v for username=%v", code, username)
 }
 
 func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
@@ -151,19 +126,8 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	// create token
 
-	token, err := random()
+	tokenmeta, err := db.NewFedOAuthToken(fedcontext.Context(r).Storage, codemeta.Username)
 	if err != nil {
-		ApiError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	tokenmeta := db.FedOAuthToken{
-		Token:    token,
-		Username: codemeta.Username,
-		IssuedOn: time.Now().UTC(),
-	}
-
-	if err := fedcontext.Context(r).Storage.StoreToken(&tokenmeta); err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	}
@@ -192,7 +156,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 		log.Printf("repy with token failed: %v", err)
 	}
 
-	log.Printf("recorded token=%v for user=%v", token, codemeta.Username)
+	log.Printf("recorded token=%v for user=%v", tokenmeta.Token, codemeta.Username)
 }
 
 // Validate a request to /oauth/authorize, that is look at whether all
@@ -238,17 +202,4 @@ func query(keys []string, r *http.Request) (params map[string]string, err error)
 	}
 
 	return params, nil
-}
-
-// Return a random string from a secure source that is sufficently long
-// for use as OAuth codes or tokens.
-func random() (string, error) {
-	nbytes := 16
-	b := make([]byte, nbytes)
-
-	if _, err := rand.Read(b); err != nil {
-		return "", errors.Wrap(err, "could not generate random string")
-	}
-
-	return fmt.Sprintf("%x", b), nil
 }
