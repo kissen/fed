@@ -67,7 +67,7 @@ func (f *FedSocialProtocol) AuthenticatePostOutbox(c context.Context, w http.Res
 	// and the handler will take care of it?
 	ps := fedcontext.Context(r).Perms
 	if ps == nil {
-		return c, false, errors.NewWith(http.StatusUnauthorized, "authorization required")
+		return c, false, errors.NewWith(http.StatusUnauthorized, "authentication required")
 	}
 	if ps.User.Name != username {
 		return c, false, errors.NewWith(http.StatusUnauthorized, "authenticated with wrong username")

@@ -41,7 +41,7 @@ func Get(iri *url.URL) (body []byte, err error) {
 	var resp *http.Response
 
 	if resp, err = client().Do(req); err != nil {
-		return nil, errors.Wrap(err, "GET failed")
+		return nil, err
 	}
 
 	defer resp.Body.Close()
@@ -82,7 +82,7 @@ func Post(body []byte, iri *url.URL) (err error) {
 	var resp *http.Response
 
 	if resp, err = client().Do(req); err != nil {
-		return errors.Wrap(err, "POST failed")
+		return err
 	}
 
 	defer resp.Body.Close()

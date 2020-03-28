@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"log"
 	"net/http"
@@ -79,7 +78,7 @@ func HandleWithPubActor(w http.ResponseWriter, r *http.Request, bhs ...BoxHandle
 	for _, bh := range bhs {
 		handled, err = bh(r.Context(), w, r)
 		if err != nil {
-			return false, errors.Wrap(err, "error in go-fed actor")
+			return false, err
 		}
 		if handled {
 			return true, nil
@@ -94,7 +93,7 @@ func HandleWithHandleFunc(w http.ResponseWriter, r *http.Request) (handled bool,
 	ph := fedcontext.Context(r).PubHandler
 
 	if handled, err = ph(r.Context(), w, r); err != nil {
-		return false, errors.Wrap(err, "error in go-fed handle func")
+		return false, err
 	}
 
 	return handled, nil
