@@ -74,7 +74,7 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	code, err := random()
 	if err != nil {
-		ApiError(w, r, "", err, http.StatusBadRequest)
+		ApiError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
@@ -82,13 +82,13 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	redirectUris, ok := r.URL.Query()["redirect_uri"]
 	if !ok {
-		ApiError(w, r, "missing redirect_uri", nil, http.StatusBadRequest)
+		ApiError(w, r, "missing redirect_uri", http.StatusBadRequest)
 		return
 	}
 
 	redirect, err := url.Parse(redirectUris[0])
 	if err != nil {
-		ApiError(w, r, "", err, http.StatusBadRequest)
+		ApiError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
@@ -105,7 +105,7 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fedcontext.Context(r).Storage.StoreCode(&c); err != nil {
-		ApiError(w, r, "", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -127,7 +127,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	qs, err := query(args, r)
 	if err != nil {
-		ApiError(w, r, "", err, http.StatusBadRequest)
+		ApiError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
@@ -137,7 +137,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 	grantType := qs["grant_type"]
 
 	if grantType != "authorization_code" {
-		ApiError(w, r, "unsupported grant_type", nil, http.StatusBadRequest)
+		ApiError(w, r, "unsupported grant_type", http.StatusBadRequest)
 		return
 	}
 
@@ -145,7 +145,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	codemeta, err := fedcontext.Context(r).Storage.RetrieveCode(code)
 	if err != nil {
-		ApiError(w, r, "", err, http.StatusUnauthorized)
+		ApiError(w, r, err, http.StatusUnauthorized)
 		return
 	}
 
@@ -153,7 +153,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	token, err := random()
 	if err != nil {
-		ApiError(w, r, "", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -164,7 +164,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := fedcontext.Context(r).Storage.StoreToken(&tokenmeta); err != nil {
-		ApiError(w, r, "", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -179,7 +179,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	replybytes, err := json.Marshal(&reply)
 	if err != nil {
-		ApiError(w, r, "", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -204,12 +204,12 @@ func validateOAuthAuthorize(w http.ResponseWriter, r *http.Request) (ok bool) {
 
 	ps, err := query(ks, r)
 	if err != nil {
-		ApiError(w, r, "validation error", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return true
 	}
 
 	if ps["response_type"] != "code" {
-		ApiError(w, r, "unsupported response_type", nil, http.StatusBadRequest)
+		ApiError(w, r, "unsupported response_type", http.StatusBadRequest)
 		return true
 	}
 

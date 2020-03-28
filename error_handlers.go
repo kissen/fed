@@ -32,6 +32,6 @@ func Error(w http.ResponseWriter, r *http.Request, status int) {
 	if IsHTMLRequest(r) {
 		template.Error(w, r, status, nil, nil)
 	} else {
-		ApiError(w, r, "routing error", nil, status)
+		ApiError(w, r, "routing error", status)
 	}
 }

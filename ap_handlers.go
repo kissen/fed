@@ -17,39 +17,39 @@ func ApGetPostOutbox(w http.ResponseWriter, r *http.Request) {
 	log.Printf("OutboxHandler(%v)", r.URL)
 
 	if done, err := HandleOutboxWithPubActor(w, r); err != nil {
-		ApiError(w, r, "go-fed error", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	} else if done {
 		return
 	}
 
-	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", nil, http.StatusNotAcceptable)
+	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", http.StatusNotAcceptable)
 }
 
 func ApGetPostInbox(w http.ResponseWriter, r *http.Request) {
 	log.Printf("InboxHandler(%v)", r.URL)
 
 	if done, err := HandleInboxWithPubActor(w, r); err != nil {
-		ApiError(w, r, "go-fed error", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	} else if done {
 		return
 	}
 
-	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", nil, http.StatusNotAcceptable)
+	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", http.StatusNotAcceptable)
 }
 
 func ApGetPostActivity(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ActivityHandler(%v)", r.URL)
 
 	if done, err := HandleWithHandleFunc(w, r); err != nil {
-		ApiError(w, r, "go-fed error", err, http.StatusInternalServerError)
+		ApiError(w, r, err, http.StatusInternalServerError)
 		return
 	} else if done {
 		return
 	}
 
-	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", nil, http.StatusNotAcceptable)
+	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", http.StatusNotAcceptable)
 }
 
 func ApGetRemote(w http.ResponseWriter, r *http.Request) {

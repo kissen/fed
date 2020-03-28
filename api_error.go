@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"gitlab.cs.fau.de/kissen/fed/errors"
 	"log"
 	"net/http"
@@ -11,31 +12,38 @@ import (
 // This is similar to http.Error except the client has less trouble
 // parsing the error.
 //
-// TODO: Replace description & err with a single Stringer argument?!
-// Or some varargs? I don't now... But the current signature kinda
-// sucks; what is the difference between description and err after all?
-func ApiError(w http.ResponseWriter, r *http.Request, description string, err error, status int) {
-	// if err contains a status code, use that instead
+// This function tries its best to infer a cause string from argument
+// cause.
+func ApiError(w http.ResponseWriter, r *http.Request, cause interface{}, status int) {
+	// find out how to represent the cause
 
-	if estatus, ok := errors.Status(err); ok {
-		status = estatus
+	var causestr string
+
+	if cause == nil {
+		log.Fatal("unexpected: called ApiError with cause=nil")
 	}
 
-	// build up json map
+	if st, ok := cause.(fmt.Stringer); ok {
+		causestr = st.String()
+	}
+
+	if ce, ok := cause.(error); ok {
+		causestr = ce.Error()
+
+		// if cause contains a status code, use that instead;
+		// this is kind of hacky I admit
+		if es, ok := errors.Status(ce); ok {
+			status = es
+		}
+	}
+
+	// build up reply
 
 	reply := map[string]interface{}{
-		"status": status,
+		"cause":       causestr,
+		"description": http.StatusText(status),
+		"status":      status,
 	}
-
-	if err != nil {
-		reply["error"] = err.Error()
-	}
-
-	if len(description) > 0 {
-		reply["description"] = description
-	}
-
-	// create json bytes; this really should never fail
 
 	bs, err := json.Marshal(&reply)
 	if err != nil {
@@ -46,7 +54,6 @@ func ApiError(w http.ResponseWriter, r *http.Request, description string, err er
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
-
 	if _, err := w.Write(bs); err != nil {
 		log.Printf("writing err json to client failed: %v", err)
 	}
