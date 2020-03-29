@@ -7,7 +7,6 @@ import (
 	"github.com/go-fed/activity/pub"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/template/fedclient"
 	"net/http"
 	"strings"
 )
@@ -54,10 +53,6 @@ type RequestContext struct {
 	// Initialized to 200.
 	Status int
 
-	// Currently logged in user for this session. Might be nil in
-	// which case nobody is logged in.
-	Client fedclient.FedClient
-
 	// The permissions associated with this request. Might be nil,
 	// in which case this request has no special permissions.
 	Perms *Permissions
@@ -72,6 +67,10 @@ type WebContext struct {
 
 	// The title that should be used.
 	Title string
+
+	// Currently logged in user for this session. Might be nil in
+	// which case nobody is logged in.
+	Client FedClient
 }
 
 // Persistent context of the web interface. This information is restored
@@ -184,12 +183,12 @@ func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 // Given the information encoded in this context, create a client.
 // If no user credentials are associated with the context, returns
 // (nil, nil).
-func (cc *CookieContext) NewClient() (fedclient.FedClient, error) {
+func (cc *CookieContext) NewClient() (FedClient, error) {
 	if cc.isEmpty(cc.Code) || cc.isEmpty(cc.ActorIRI) {
 		return nil, nil
 	}
 
-	client, err := fedclient.New(*cc.ActorIRI)
+	client, err := NewFedClient(*cc.ActorIRI)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating client with credentials failed")
 	}

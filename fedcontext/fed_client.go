@@ -1,4 +1,4 @@
-package fedclient
+package fedcontext
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ type fedclient struct {
 	followersIRI *url.URL
 }
 
-func New(actorAddr string) (_ FedClient, err error) {
+func NewFedClient(actorAddr string) (_ FedClient, err error) {
 	fc := &fedclient{}
 
 	fc.iri, err = url.Parse(actorAddr)
