@@ -106,6 +106,10 @@ main > h1 {
     font-size: var(--big);
 }
 
+main > code {
+    font-size: var(--small);
+}
+
 /*
  * styling of flashes
  */

@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"gitlab.cs.fau.de/kissen/fed/db"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 )
@@ -37,15 +39,8 @@ func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) fun
 				}
 
 				// try to find out the permissions of the request;
-				// fills out the Perms field
-				setPermissionsOn(fc, r)
-
-				// try creating a client; this is for the web interface
-				if fc.Client, err = fc.NewClient(); err != nil {
-					log.Println(err)
-				}
-
-				// install context into request
+				// fills out the Client field
+				setClientOn(fc, r)
 			}
 
 			next.ServeHTTP(w, r)
@@ -53,122 +48,94 @@ func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) fun
 	}
 }
 
-// Set the Perms field on fc. This is done by trying out all
+// Set the Client field on fc. This is done by trying out all
 // available authentication schemes one by one.
-func setPermissionsOn(fc *FedContext, from *http.Request) {
-	if setPermissionsFromBasiAuth(fc, from) {
+func setClientOn(fc *FedContext, from *http.Request) {
+	if setClientFromBasiAuth(fc, from) {
 		return
 	}
 
-	if setPermissionsFromCodeParam(fc, from) {
+	if setClientFromTokenCookie(fc, from) {
 		return
 	}
 
-	if setPermissionsFromCodeCookie(fc, from) {
-		return
-	}
-
-	if setPermissionsFromTokenParam(fc, from) {
+	if setClientFromTokenParam(fc, from) {
 		return
 	}
 }
 
-// Try to set fc.Perms by looking at basic authentication headers
+// Try to set fc.Client by looking at basic authentication headers
 // on the HTTP request.
 //
 // Basic authentication doesn't seem common on the fediverse, but
 // it is very convenient for debugging.
-func setPermissionsFromBasiAuth(fc *FedContext, from *http.Request) (authed bool) {
+func setClientFromBasiAuth(fc *FedContext, from *http.Request) (authed bool) {
+	// get credentials; if none were supplied give up right away
+
 	username, password, ok := from.BasicAuth()
 	if !ok {
 		return false
 	}
 
-	permissions, err := PermissionsFrom(from, username, password)
+	// create token for each basic auth; this is honestly kind of
+	// dumb but it will have to do for now
+
+	tm, err := db.NewFedOAuthToken(username, password, fc.Storage)
 	if err != nil {
-		log.Println("basic auth:", err)
 		return false
 	}
 
-	fc.Perms = permissions
+	if !setClientFromToken(fc, tm.Token) {
+		return false
+	}
 
-	log.Printf("authenticated user=%v with basic auth", fc.Perms.User.Name)
-
+	log.Printf("authenticated user=%v with basic auth", username)
 	return true
 }
 
-// Try to set fc.Perms by looking at the ?code= parameter in the
-// request URI. This is mostly for API calls on the fediverse.
-func setPermissionsFromCodeParam(fc *FedContext, from *http.Request) (authed bool) {
-	code := from.URL.Query().Get("code")
-	return setPermissionsFromCode(fc, code)
-}
-
-// Try to set fc.Perms by looking at the fc.Code property. fc.Code
+// Try to set fc.Client by looking at the fc.Token property. fc.Token
 // is part of CookieContext and as such persisted by web browsers.
 // This is the authentication most users will use when interating
 // with the web interface.
-func setPermissionsFromCodeCookie(fc *FedContext, from *http.Request) (authed bool) {
-	if code := fc.Code; code == nil {
+func setClientFromTokenCookie(fc *FedContext, from *http.Request) (authed bool) {
+	if token := fc.Token; token == nil {
 		return false
 	} else {
-		return setPermissionsFromCode(fc, *code)
+		return setClientFromToken(fc, *token)
 	}
 }
 
-// Given code, try to set fc.Perms accordingly if it is a valid and
-// not expired OAuth code.
-func setPermissionsFromCode(fc *FedContext, code string) (authed bool) {
-	cm, err := fc.Storage.RetrieveCode(code)
-	if err != nil {
-		log.Printf("code auth: rejecting code=%v: %v", code, err)
-		return false
-	}
-
-	user, err := fc.Storage.RetrieveUser(cm.Username)
-	if err != nil {
-		log.Printf("code auth: bad username=%v in code metadata: %v", cm.Username, err)
-		return false
-	}
-
-	fc.Perms = &Permissions{
-		User:   *user,
-		Create: true,
-		Like:   true,
-	}
-
-	log.Printf("authenticated user=%v with code auth", fc.Perms.User.Name)
-
-	return true
-}
-
-// Try to set fc.Perms by looking at the ?token= parameter in the
+// Try to set fc.Client by looking at the ?token= parameter in the
 // request URI. This is mostly for API calls on the fediverse.
-func setPermissionsFromTokenParam(fc *FedContext, from *http.Request) (authed bool) {
+func setClientFromTokenParam(fc *FedContext, from *http.Request) (authed bool) {
 	token := from.URL.Query().Get("token")
-	if len(token) == 0 {
+	return setClientFromToken(fc, token)
+}
+
+// Given token, try to set fc.Client accordingly if it is a valid and
+// not expired OAuth token.
+func setClientFromToken(fc *FedContext, token string) (authed bool) {
+	// trim token; if empty don't even bother trying
+	tt, ok := util.Trim(&token)
+	if !ok {
 		return false
 	}
 
-	cm, err := fc.Storage.RetrieveToken(token)
+	// get the token meta data
+	cm, err := fc.Storage.RetrieveToken(tt)
 	if err != nil {
-		log.Printf("token auth: rejecting token=%v: %v", token, err)
 		return false
 	}
 
-	user, err := fc.Storage.RetrieveUser(cm.Username)
+	// build up client
+	addr := fediri.ActorIRI(cm.Username).String()
+	client, err := NewRemoteClient(addr, tt)
 	if err != nil {
-		log.Printf("token auth: bad username=%v in token metadata: %v", cm.Username, err)
 		return false
 	}
 
-	fc.Perms = &Permissions{
-		User:   *user,
-		Create: true,
-		Like:   true,
-	}
-
-	log.Printf("authenticated user=%v with token auth", fc.Perms.User.Name)
-
+	// set and return
+	fc.Client = client
+	log.Printf("authenticated user=%v with token auth", cm.Username)
 	return true
 }

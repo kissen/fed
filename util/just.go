@@ -1,4 +1,4 @@
-package fedcontext
+package util
 
 // Return a pointer pointing to s. This is useful
 // in cases where we want to fill pointer fields in

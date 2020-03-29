@@ -6,6 +6,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/template"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 	"net/url"
@@ -48,19 +49,9 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check whether credentials are valid
-
-	_, err := fedcontext.PermissionsFrom(r, username, password)
-	if err != nil {
-		fedcontext.FlashWarning(r, err.Error())
-		fedcontext.Status(r, http.StatusUnauthorized)
-		GetOAuthAuthorize(w, r)
-		return
-	}
-
 	// generate a code
 
-	code, err := db.NewFedOAuthCode(fedcontext.Context(r).Storage, username)
+	code, err := db.NewFedOAuthCode(username, password, fedcontext.Context(r).Storage)
 	if err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
 		return
@@ -80,14 +71,12 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qu := redirect.Query()
-	qu.Add("code", code.Code)
-	redirect.RawQuery = qu.Encode()
+	redirect = util.WithParam(redirect, "code", code.Code)
 
 	// send out reply
 
 	http.Redirect(w, r, redirect.String(), http.StatusFound)
-	log.Printf("recorded code=%v for username=%v", code, username)
+	log.Printf("recorded code=%v for username=%v", code.Code, username)
 }
 
 func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +107,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	// look up user
 
-	codemeta, err := fedcontext.Context(r).Storage.RetrieveCode(code)
+	cm, err := fedcontext.Context(r).Storage.RetrieveCode(code)
 	if err != nil {
 		ApiError(w, r, err, http.StatusUnauthorized)
 		return
@@ -126,7 +115,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	// create token
 
-	tokenmeta, err := db.NewFedOAuthToken(fedcontext.Context(r).Storage, codemeta.Username)
+	tokenmeta, err := db.NewFedOAuthTokenFor(cm.Username, fedcontext.Context(r).Storage)
 	if err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
 		return
@@ -156,7 +145,7 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 		log.Printf("repy with token failed: %v", err)
 	}
 
-	log.Printf("recorded token=%v for user=%v", tokenmeta.Token, codemeta.Username)
+	log.Printf("recorded token=%v for user=%v", tokenmeta.Token, cm.Username)
 }
 
 // Validate a request to /oauth/authorize, that is look at whether all

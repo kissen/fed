@@ -7,8 +7,8 @@ import (
 	"github.com/go-fed/activity/pub"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"net/http"
-	"strings"
 )
 
 // The key used in the HTTP request under which we store our
@@ -53,9 +53,9 @@ type RequestContext struct {
 	// Initialized to 200.
 	Status int
 
-	// The permissions associated with this request. Might be nil,
-	// in which case this request has no special permissions.
-	Perms *Permissions
+	// Currently logged in user for this session. Might be nil in
+	// which case nobody is logged in.
+	Client FedClient
 }
 
 // Volatile context of the web interface. This information is only valid
@@ -67,21 +67,14 @@ type WebContext struct {
 
 	// The title that should be used.
 	Title string
-
-	// Currently logged in user for this session. Might be nil in
-	// which case nobody is logged in.
-	Client FedClient
 }
 
 // Persistent context of the web interface. This information is restored
 // when installing the context.
 type CookieContext struct {
-	// Code that authenticates this users session. This is identical
-	// to OAuth codes. Might be nil.
-	Code *string
-
-	// ActorIRI from login, if there is one.
-	ActorIRI *string
+	// Token that authenticates this users session. This is identical
+	// to OAuth tokens. Might be nil.
+	Token *string
 
 	// Flashes to display on top of the page. Might be nil.
 	Flashs []string
@@ -135,12 +128,10 @@ func (cc *CookieContext) LoadFromCookie(r *http.Request) error {
 	cc.Warnings = buf.Warnings
 	cc.Errors = buf.Errors
 
-	cc.Code = nil
-	cc.ActorIRI = nil
+	cc.Token = nil
 
-	if !cc.isEmpty(buf.Code) && !cc.isEmpty(buf.Code) {
-		cc.Code = buf.Code
-		cc.ActorIRI = buf.ActorIRI
+	if tt, ok := util.Trim(buf.Token); ok {
+		cc.Token = util.Just(tt)
 	}
 
 	return nil
@@ -150,15 +141,8 @@ func (cc *CookieContext) LoadFromCookie(r *http.Request) error {
 // once the user comes back, the persisted fields can be restored
 // with a call to LoadFromCookie.
 func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
-	// prepare a sanitized copy of cc in buf
-	var buf CookieContext = *cc
-	if cc.isEmpty(buf.Code) || cc.isEmpty(buf.ActorIRI) {
-		buf.Code = nil
-		buf.ActorIRI = nil
-	}
-
 	// conver buf to json
-	text, err := json.Marshal(&buf)
+	text, err := json.Marshal(cc)
 	if err != nil {
 		return errors.Wrap(err, "cookie marshal failed")
 	}
@@ -178,32 +162,6 @@ func (cc *CookieContext) WriteToCookie(w http.ResponseWriter) error {
 	http.SetCookie(w, &cookie)
 
 	return nil
-}
-
-// Given the information encoded in this context, create a client.
-// If no user credentials are associated with the context, returns
-// (nil, nil).
-func (cc *CookieContext) NewClient() (FedClient, error) {
-	if cc.isEmpty(cc.Code) || cc.isEmpty(cc.ActorIRI) {
-		return nil, nil
-	}
-
-	client, err := NewFedClient(*cc.ActorIRI)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating client with credentials failed")
-	}
-
-	return client, nil
-}
-
-// Return whether sp is nil or empty when taking whitespace into account.
-func (cc *CookieContext) isEmpty(sp *string) bool {
-	if sp == nil {
-		return true
-	}
-
-	trimmed := strings.TrimSpace(*sp)
-	return len(trimmed) == 0
 }
 
 // Set all flash slices to nil. It makes sense to call this method after we ensured
@@ -256,11 +214,6 @@ func Status(r *http.Request, status int) {
 	if fc := Context(r); fc.Status == 0 {
 		fc.Status = status
 	}
-}
-
-// Set actor IRI on context.
-func ActorIRI(r *http.Request, actorIRI string) {
-	Context(r).ActorIRI = &actorIRI
 }
 
 // Add s to the list of flashes to display on the web interface.

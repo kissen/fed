@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams"
 	"github.com/gorilla/mux"
-	"gitlab.cs.fau.de/kissen/fed/ap"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/template"
@@ -133,11 +132,9 @@ func WebGetLogin(w http.ResponseWriter, r *http.Request) {
 
 func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 	log.Printf("WebPostLogin(%v)", r.URL)
-
 	context := fedcontext.Context(r)
 
 	// check whether we have valid input
-
 	username, ok := FormValue(r, "username")
 	if !ok {
 		fedcontext.FlashWarning(r, "missing username")
@@ -145,7 +142,6 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 		WebGetLogin(w, r)
 		return
 	}
-
 	password, ok := FormValue(r, "password")
 	if !ok {
 		fedcontext.FlashWarning(r, "missing password")
@@ -154,10 +150,8 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// try to create permissions ; this will ensure that the
-	// credentials are actually correct
-
-	_, err := fedcontext.PermissionsFrom(r, username, password)
+	// try to create a session with the supplied credentials
+	tm, err := db.NewFedOAuthToken(username, password, context.Storage)
 	if err != nil {
 		fedcontext.FlashWarning(r, err.Error())
 		fedcontext.Status(r, http.StatusUnauthorized)
@@ -165,24 +159,10 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// we have ok permissions; create a code which we'll write into
-	// the cookie
-
-	code, err := db.NewFedOAuthCode(context.Storage, username)
-	if err != nil {
-		template.Error(w, r, http.StatusInternalServerError, err, nil)
-		return
-	}
-
 	// success; set context and write cookie for later
-
-	context.Code = &code.Code
-
-	iri := ap.ActorIRI(r.Context(), username)
-	context.ActorIRI = fedcontext.Just(iri.String())
+	context.Token = &tm.Token
 
 	// we are just logged on; forward to stream page for now
-
 	fedcontext.Flash(r, "successfully logged in")
 	RedirectLocal(w, r, "/stream")
 }
@@ -190,9 +170,7 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 func WebPostLogout(w http.ResponseWriter, r *http.Request) {
 	// remove credentials and client from context
 	context := fedcontext.Context(r)
-	context.Code = nil
-	context.ActorIRI = nil
-	context.Client = nil
+	context.Token = nil
 
 	// redirect to login page
 	fedcontext.Flash(r, "logged out")

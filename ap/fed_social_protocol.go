@@ -6,6 +6,7 @@ import (
 	"github.com/go-fed/activity/streams/vocab"
 	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"log"
 	"net/http"
 )
@@ -55,21 +56,29 @@ func (f *FedSocialProtocol) PostOutboxRequestBodyHook(c context.Context, r *http
 func (f *FedSocialProtocol) AuthenticatePostOutbox(c context.Context, w http.ResponseWriter, r *http.Request) (out context.Context, authed bool, err error) {
 	log.Println("AuthenticatePostOutbox()")
 
-	username, err := IRI{c, r.URL}.OutboxOwner()
+	username, err := fediri.IRI{r.URL}.OutboxOwner()
 	if err != nil {
 		// this should not happen; if we are authenticating an
 		// outbox, why isn't the IRI an outbox IRI?
 		return c, false, errors.WrapWith(http.StatusInternalServerError, err, "not an outbox")
 	}
 
-	// according to the documentation, this function is expected
-	// to write the error; but we can also just return an error
-	// and the handler will take care of it?
-	ps := fedcontext.Context(r).Perms
-	if ps == nil {
+	// ???: according to the documentation, this function is expected
+	// to write the error; but we can also just return an error and the
+	// handler will take care of it?
+
+	client := fedcontext.Context(r).Client
+
+	if client == nil {
 		return c, false, errors.NewWith(http.StatusUnauthorized, "authentication required")
 	}
-	if ps.User.Name != username {
+
+	lu, ok := fedcontext.LocalUsername(client)
+	if !ok {
+		return c, false, errors.NewWith(http.StatusUnauthorized, "canot POST to remote actor")
+	}
+
+	if lu != username {
 		return c, false, errors.NewWith(http.StatusUnauthorized, "authenticated with wrong username")
 	}
 

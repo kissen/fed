@@ -7,6 +7,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"gitlab.cs.fau.de/kissen/fed/prop"
 	"log"
 	"net/url"
@@ -54,9 +55,9 @@ func (f *FedDatabase) Unlock(c context.Context, id *url.URL) error {
 func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (contains bool, err error) {
 	log.Printf("InboxContains(inbox=%v id=%v)", inbox, id)
 
-	inboxIri := IRI{c, inbox}
+	inboxIri := fediri.IRI{inbox}
 
-	if user, err := inboxIri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&inboxIri, fedcontext.From(c).Storage); err != nil {
 		return false, err
 	} else {
 		return urlIn(id, user.Inbox), nil
@@ -70,9 +71,9 @@ func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (cont
 func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Printf("GetInbox(%v)", inboxIRI)
 
-	iri := IRI{c, inboxIRI}
+	iri := fediri.IRI{inboxIRI}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, err
 	} else if page, err := collectPage(c, user.Inbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
@@ -91,9 +92,9 @@ func (f *FedDatabase) SetInbox(c context.Context, inbox vocab.ActivityStreamsOrd
 	log.Println("SetInbox()")
 
 	id := prop.Id(inbox)
-	iri := IRI{c, id}
+	iri := fediri.IRI{id}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return err
 	} else if slice, err := f.addToStorage(c, inbox); err != nil {
 		return err
@@ -118,9 +119,9 @@ func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error
 
 	// it isn't; check if it's a users collection
 
-	iri := IRI{c, id}
+	iri := fediri.IRI{id}
 
-	if user, err := iri.RetrieveOwner(); err == nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err == nil {
 		if urlInAny(id, user.Collections()) {
 			return true, nil
 		}
@@ -137,12 +138,12 @@ func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error
 func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (actorIRI *url.URL, err error) {
 	log.Printf("ActorForOutbox(%v)", outboxIRI)
 
-	iri := IRI{c, outboxIRI}
+	iri := fediri.IRI{outboxIRI}
 
 	if username, err := iri.OutboxOwner(); err != nil {
 		return nil, err
 	} else {
-		return ActorIRI(c, username).URL(), nil
+		return fediri.ActorIRI(username).URL(), nil
 	}
 }
 
@@ -152,12 +153,12 @@ func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (act
 func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actorIRI *url.URL, err error) {
 	log.Printf("ActorForInbox(%v)", inboxIRI)
 
-	iri := IRI{c, inboxIRI}
+	iri := fediri.IRI{inboxIRI}
 
 	if username, err := iri.InboxOwner(); err != nil {
 		return nil, err
 	} else {
-		return ActorIRI(c, username).URL(), nil
+		return fediri.ActorIRI(username).URL(), nil
 	}
 }
 
@@ -168,12 +169,12 @@ func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actor
 func (f *FedDatabase) OutboxForInbox(c context.Context, inboxIRI *url.URL) (outboxIRI *url.URL, err error) {
 	log.Printf("OutboxForInbox(%v)", outboxIRI)
 
-	iri := IRI{c, inboxIRI}
+	iri := fediri.IRI{inboxIRI}
 
 	if username, err := iri.InboxOwner(); err != nil {
 		return nil, err
 	} else {
-		return InboxIRI(c, username).URL(), nil
+		return fediri.InboxIRI(username).URL(), nil
 	}
 }
 
@@ -199,7 +200,7 @@ func (f *FedDatabase) Exists(c context.Context, id *url.URL) (exists bool, err e
 func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, err error) {
 	log.Printf("Get(%v)", addr)
 
-	iri := IRI{c, addr}
+	iri := fediri.IRI{addr}
 
 	// try out collections
 
@@ -292,9 +293,9 @@ func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
 func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
 	log.Printf("GetOutbox(%v)", outboxIRI)
 
-	iri := IRI{c, outboxIRI}
+	iri := fediri.IRI{outboxIRI}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, errors.Wrap(err, "no such outbox")
 	} else if page, err := collectPage(c, user.Outbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
@@ -313,9 +314,9 @@ func (f *FedDatabase) SetOutbox(c context.Context, outbox vocab.ActivityStreamsO
 	log.Println("SetOutbox()")
 
 	id := prop.Id(outbox)
-	iri := IRI{c, id}
+	iri := fediri.IRI{id}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return err
 	} else if slice, err := f.addToStorage(c, outbox); err != nil {
 		return err
@@ -334,7 +335,7 @@ func (f *FedDatabase) SetOutbox(c context.Context, outbox vocab.ActivityStreamsO
 func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err error) {
 	log.Println("NewId()")
 
-	return RollObjectIRI(c).URL(), nil
+	return fediri.RollObjectIRI().URL(), nil
 }
 
 // Followers obtains the Followers Collection for an actor with the
@@ -346,9 +347,9 @@ func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err e
 func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Followers(%v)", actorIRI)
 
-	iri := IRI{c, actorIRI}
+	iri := fediri.IRI{actorIRI}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, err
 	} else if set, err := collectSet(c, user.Followers); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
@@ -367,9 +368,9 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Following(%v)", actorIRI)
 
-	iri := IRI{c, actorIRI}
+	iri := fediri.IRI{actorIRI}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, err
 	} else if set, err := collectSet(c, user.Following); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
@@ -388,9 +389,9 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Liked(%v)", actorIRI)
 
-	iri := IRI{c, actorIRI}
+	iri := fediri.IRI{actorIRI}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, err
 	} else if set, err := collectSet(c, user.Liked); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
@@ -405,9 +406,9 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 
 	var user *db.FedUser
 
-	iri := IRI{c, actorIRI}
+	iri := fediri.IRI{actorIRI}
 
-	if user, err = iri.RetrieveOwner(); err != nil {
+	if user, err = retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, errors.Wrap(err, "not an actor")
 	}
 
@@ -421,27 +422,27 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 	actor.SetActivityStreamsName(name)
 
 	inbox := streams.NewActivityStreamsInboxProperty()
-	inbox.SetIRI(InboxIRI(c, user.Name).URL())
+	inbox.SetIRI(fediri.InboxIRI(user.Name).URL())
 	actor.SetActivityStreamsInbox(inbox)
 
 	outbox := streams.NewActivityStreamsOutboxProperty()
-	outbox.SetIRI(OutboxIRI(c, user.Name).URL())
+	outbox.SetIRI(fediri.OutboxIRI(user.Name).URL())
 	actor.SetActivityStreamsOutbox(outbox)
 
 	followers := streams.NewActivityStreamsFollowersProperty()
-	followers.SetIRI(FollowersIRI(c, user.Name).URL())
+	followers.SetIRI(fediri.FollowersIRI(user.Name).URL())
 	actor.SetActivityStreamsFollowers(followers)
 
 	following := streams.NewActivityStreamsFollowingProperty()
-	following.SetIRI(FollowingIRI(c, user.Name).URL())
+	following.SetIRI(fediri.FollowingIRI(user.Name).URL())
 	actor.SetActivityStreamsFollowing(following)
 
 	liked := streams.NewActivityStreamsLikedProperty()
-	liked.SetIRI(LikedIRI(c, user.Name).URL())
+	liked.SetIRI(fediri.LikedIRI(user.Name).URL())
 	actor.SetActivityStreamsLiked(liked)
 
 	likes := streams.NewActivityStreamsLikesProperty()
-	likes.SetIRI(LikedIRI(c, user.Name).URL())
+	likes.SetIRI(fediri.LikedIRI(user.Name).URL())
 	actor.SetActivityStreamsLiked(liked)
 
 	return actor, nil

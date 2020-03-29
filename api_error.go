@@ -23,6 +23,10 @@ func ApiError(w http.ResponseWriter, r *http.Request, cause interface{}, status 
 		log.Fatal("unexpected: called ApiError with cause=nil")
 	}
 
+	if s, ok := cause.(string); ok {
+		causestr = s
+	}
+
 	if st, ok := cause.(fmt.Stringer); ok {
 		causestr = st.String()
 	}

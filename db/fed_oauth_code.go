@@ -2,22 +2,28 @@ package db
 
 import "time"
 
+const _CODE_LIFETIME = 1 * time.Minute
+
 type FedOAuthCode struct {
 	Code     string
 	Username string
 	IssuedOn time.Time
 }
 
-// Create a new randomized token for username and put it
-// into the database at dst.
-func NewFedOAuthCode(dst FedStorage, username string) (*FedOAuthCode, error) {
+// If username/password are valid credentials, create a new
+// code, store it into target and return it.
+func NewFedOAuthCode(username, password string, target FedStorage) (*FedOAuthCode, error) {
+	if err := CheckCredentials(username, password, target); err != nil {
+		return nil, err
+	}
+
 	oc := &FedOAuthCode{
 		Code:     random(),
 		Username: username,
 		IssuedOn: time.Now().UTC(),
 	}
 
-	if err := dst.StoreCode(oc); err != nil {
+	if err := target.StoreCode(oc); err != nil {
 		return nil, err
 	}
 
@@ -26,5 +32,6 @@ func NewFedOAuthCode(dst FedStorage, username string) (*FedOAuthCode, error) {
 
 // Return whether this code is expired.
 func (c *FedOAuthCode) Expired() bool {
-	return false
+	end := c.IssuedOn.Add(_CODE_LIFETIME)
+	return time.Now().UTC().After(end)
 }

@@ -5,6 +5,8 @@ import (
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"gitlab.cs.fau.de/kissen/fed/prop"
 	"log"
 	"net/http"
@@ -296,9 +298,9 @@ func (f *FedFederatingProtocol) FilterForwarding(c context.Context, potentialRec
 func (f *FedFederatingProtocol) GetInbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Printf("GetInbox(%v)", r.URL)
 
-	iri := IRI{c, r.URL}
+	iri := fediri.IRI{r.URL}
 
-	if user, err := iri.RetrieveOwner(); err != nil {
+	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
 		return nil, err
 	} else if page, err := collectPage(c, user.Inbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")

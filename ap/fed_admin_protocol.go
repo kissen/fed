@@ -4,6 +4,7 @@ import (
 	"context"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"log"
 	"net/http"
 	"sync"
@@ -63,7 +64,7 @@ func (f *FedAdminProtocol) Handle(c context.Context, w http.ResponseWriter, r *h
 
 	// do basic routing depending on IRI type
 
-	iri := IRI{Context: c, Target: r.URL}
+	iri := fediri.IRI{Target: r.URL}
 
 	if username, err := iri.Actor(); err == nil {
 		if _, err := f.CreateUser(c, username); err != nil {
