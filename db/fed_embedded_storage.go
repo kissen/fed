@@ -10,7 +10,10 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 )
+
+const _GARBAGE_COLLECTION_WAIT = 1 * time.Minute
 
 var _USERS_BUCKET = []byte("Users")
 var _CODES_BUCKET = []byte("OAuth/Codes")
@@ -20,6 +23,7 @@ var _DOCUMENTS_BUCKET = []byte("Documents")
 type FedEmbeddedStorage struct {
 	Filepath   string
 	connection *bbolt.DB
+	closed     bool
 }
 
 func (fs *FedEmbeddedStorage) Open() (err error) {
@@ -49,8 +53,13 @@ func (fs *FedEmbeddedStorage) Open() (err error) {
 	})
 
 	if err != nil {
+		fs.connection.Close()
 		return errors.Wrap(err, "intializing buckets failed")
 	}
+
+	// start garbage collection; it will run until Close
+
+	go fs.gcLoop()
 
 	// success
 
@@ -60,6 +69,11 @@ func (fs *FedEmbeddedStorage) Open() (err error) {
 func (fs *FedEmbeddedStorage) Close() error {
 	log.Println("Close()")
 
+	if fs.closed {
+		return errors.New("database was already closed")
+	}
+
+	fs.closed = true
 	return fs.connection.Close()
 }
 
@@ -230,6 +244,84 @@ func (fs *FedEmbeddedStorage) store(bucket []byte, key string, value []byte) err
 
 		if err := b.Put([]byte(key), value); err != nil {
 			return errors.Wrapf(err, "put key=%v into bucket=%v failed", key, string(bucket))
+		}
+
+		return nil
+	})
+}
+
+func (fs *FedEmbeddedStorage) gcLoop() {
+	for !fs.closed {
+		if err := fs.gc(_CODES_BUCKET); err != nil {
+			log.Printf("code garbage collection failed: %v", err)
+		}
+
+		if err := fs.gc(_TOKENS_BUCKET); err != nil {
+			log.Printf("token garbage collection failed: %v", err)
+		}
+
+		time.Sleep(_GARBAGE_COLLECTION_WAIT)
+	}
+}
+
+func (fs *FedEmbeddedStorage) gc(bucket []byte) (err error) {
+	return fs.connection.Update(func(tx *bbolt.Tx) error {
+		// open bucket for update
+
+		var b *bbolt.Bucket
+
+		if b = tx.Bucket(bucket); b == nil {
+			return fmt.Errorf("cannot open bucket=%v", string(bucket))
+		}
+
+		// iterate over bucket; find all keys which contain expired codes
+		// or tokens
+
+		var expiredKeys [][]byte
+
+		err = b.ForEach(func(key, value []byte) error {
+			type expirer interface {
+				Expired() bool
+			}
+
+			var (
+				e  expirer
+				oc FedOAuthCode
+				ot FedOAuthToken
+			)
+
+			if err := json.Unmarshal(value, &oc); err != nil {
+				e = &oc
+				goto found
+			}
+
+			if err := json.Unmarshal(value, &ot); err != nil {
+				e = &ot
+				goto found
+			}
+
+		found:
+			if e == nil {
+				return errors.Newf("unexpected value of type=%T", value)
+			}
+
+			if e.Expired() {
+				expiredKeys = append(expiredKeys, key)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			return errors.Wrap(err, "error while trying to detrmine expired keys")
+		}
+
+		// now that we have all expired keys, we can delete those entries
+
+		for _, key := range expiredKeys {
+			if err := b.Delete(key); err != nil {
+				return errors.Wrapf(err, "error deleting key=%v", string(key))
+			}
 		}
 
 		return nil
