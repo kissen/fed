@@ -1,6 +1,7 @@
 package template
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
 	"gitlab.cs.fau.de/kissen/fed/errors"
@@ -202,6 +203,11 @@ func (v *webVocab) XFrom() string {
 	} else {
 		return author
 	}
+}
+
+// Return the Id property in base64.
+func (v *webVocab) XIdBase64() string {
+	return base64.StdEncoding.EncodeToString([]byte(v.Id()))
 }
 
 // If this object is some kind of collection, return the individual

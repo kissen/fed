@@ -16,14 +16,17 @@
 
 	<div class="cardfooter">
 		<form class="svgform" action="/reply" method="post">
+			<input type="hidden" name="iri_base64" value="{{.XIdBase64}}" />
 			<input class="svgbutton" type="image" src="/static/reply.svg" title="Reply" />
 		</form>
 
 		<form class="svgform" action="/repeat" method="post">
+			<input type="hidden" name="iri_base64" value="{{.XIdBase64}}" />
 			<input class="svgbutton" type="image" src="/static/repeat.svg" title="Repeat" />
 		</form>
 
 		<form class="svgform" action="/like" method="post">
+			<input type="hidden" name="iri_base64" value="{{.XIdBase64}}" />
 			<input class="svgbutton" type="image" src="/static/like.svg" title="Like" />
 		</form>
 	</div>
