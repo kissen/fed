@@ -81,6 +81,9 @@ func InstallSplitHandlers(router *mux.Router) {
 	router.HandleFunc("/remote/{remotepath:.+}", GetRemote).Methods("GET")
 	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
 	router.HandleFunc("/submit", PostSubmit).Methods("POST")
+	router.HandleFunc("/reply", PostReply).Methods("POST")
+	router.HandleFunc("/repeat", PostRepeat).Methods("POST")
+	router.HandleFunc("/like", PostLike).Methods("POST")
 
 	// catchall for activity pub
 	router.PathPrefix("/").HandlerFunc(ApGetPostActivity).Methods("GET", "POST")

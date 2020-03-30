@@ -4,6 +4,11 @@ import (
 	"net/http"
 )
 
+// This file contains various meta handlers that call
+// either the web interface or the api (or an error).
+//
+// We should really do this with gorilla mux...
+
 // GET /
 func GetIndex(w http.ResponseWriter, r *http.Request) {
 	if IsActivityPubRequest(r) {
@@ -109,5 +114,32 @@ func PostSubmit(w http.ResponseWriter, r *http.Request) {
 		WrongContentType(w, r)
 	} else {
 		WebPostSubmit(w, r)
+	}
+}
+
+// POST /reply
+func PostReply(w http.ResponseWriter, r *http.Request) {
+	if IsActivityPubRequest(r) {
+		WrongContentType(w, r)
+	} else {
+		WebPostReply(w, r)
+	}
+}
+
+// POST /repeat
+func PostRepeat(w http.ResponseWriter, r *http.Request) {
+	if IsActivityPubRequest(r) {
+		WrongContentType(w, r)
+	} else {
+		WebPostRepeat(w, r)
+	}
+}
+
+// POST /like
+func PostLike(w http.ResponseWriter, r *http.Request) {
+	if IsActivityPubRequest(r) {
+		WrongContentType(w, r)
+	} else {
+		WebPostLike(w, r)
 	}
 }

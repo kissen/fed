@@ -232,3 +232,15 @@ func WebPostSubmit(w http.ResponseWriter, r *http.Request) {
 	fedcontext.Flash(r, "submitted")
 	RedirectLocal(w, r, "/")
 }
+
+func WebPostReply(w http.ResponseWriter, r *http.Request) {
+	template.Error(w, r, http.StatusNotImplemented, nil, nil)
+}
+
+func WebPostRepeat(w http.ResponseWriter, r *http.Request) {
+	template.Error(w, r, http.StatusNotImplemented, nil, nil)
+}
+
+func WebPostLike(w http.ResponseWriter, r *http.Request) {
+	template.Error(w, r, http.StatusNotImplemented, nil, nil)
+}
