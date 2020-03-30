@@ -1,6 +1,10 @@
 package db
 
-import "time"
+import (
+	"encoding/json"
+	"errors"
+	"time"
+)
 
 const _CODE_LIFETIME = 1 * time.Minute
 
@@ -34,4 +38,29 @@ func NewFedOAuthCode(username, password string, target FedStorage) (*FedOAuthCod
 func (c *FedOAuthCode) Expired() bool {
 	end := c.IssuedOn.Add(_CODE_LIFETIME)
 	return time.Now().UTC().After(end)
+}
+
+// Unmarshal override to avoid confusion with FedOAuthToken.
+func (c *FedOAuthCode) UnmarshalJSON(data []byte) error {
+	type Code struct {
+		Code     string
+		Username string
+		IssuedOn time.Time
+	}
+
+	var buf Code
+
+	if err := json.Unmarshal(data, &buf); err != nil {
+		return err
+	}
+
+	if len(buf.Code) == 0 {
+		return errors.New("empty code")
+	}
+
+	c.Code = buf.Code
+	c.Username = buf.Username
+	c.IssuedOn = buf.IssuedOn
+
+	return nil
 }
