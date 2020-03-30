@@ -290,19 +290,19 @@ func (fs *FedEmbeddedStorage) gc(bucket []byte) (err error) {
 				ot FedOAuthToken
 			)
 
-			if err := json.Unmarshal(value, &oc); err != nil {
+			if err := json.Unmarshal(value, &oc); err == nil {
 				e = &oc
 				goto found
 			}
 
-			if err := json.Unmarshal(value, &ot); err != nil {
+			if err := json.Unmarshal(value, &ot); err == nil {
 				e = &ot
 				goto found
 			}
 
 		found:
 			if e == nil {
-				return errors.Newf("unexpected value of type=%T", value)
+				return errors.Newf("unexpected value=%v", string(value))
 			}
 
 			if e.Expired() {
