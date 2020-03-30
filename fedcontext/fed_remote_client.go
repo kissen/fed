@@ -7,6 +7,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"gitlab.cs.fau.de/kissen/fed/prop"
 	"gitlab.cs.fau.de/kissen/fed/util"
+	"net/url"
 	"time"
 )
 
@@ -18,18 +19,28 @@ func NewRemoteClient(actoraddr, token string) (FedClient, error) {
 	}
 
 	bc.create = func(event vocab.Type) error {
-		create, err := createCreate(bc, event)
-		if err != nil {
+		if create, err := createCreate(bc, event); err != nil {
 			return err
+		} else {
+			target := bc.OutboxIRI()
+			return submitWithToken(create, target, token)
 		}
 
-		// append token to target so the request is authenticated
-		target := bc.outboxIRI
-		target = util.WithParam(target, "token", token)
-		return fetch.Submit(create, target)
+	}
+
+	bc.like = func(iri *url.URL) error {
+		like := createLike(bc, iri)
+		target := bc.OutboxIRI()
+		return submitWithToken(like, target, token)
 	}
 
 	return bc, nil
+}
+
+// Submit obj to target with OAuth token authorization.
+func submitWithToken(obj vocab.Type, target *url.URL, token string) error {
+	target = util.WithParam(target, "token", token)
+	return fetch.Submit(obj, target)
 }
 
 // Wrap event into a Create activity.
@@ -60,4 +71,13 @@ func createCreate(fc FedClient, event vocab.Type) (vocab.ActivityStreamsCreate, 
 	create.SetActivityStreamsAudience(audience)
 
 	return create, nil
+}
+
+// Create a Like activity for the object at iri.
+func createLike(fc FedClient, iri *url.URL) vocab.ActivityStreamsLike {
+	like := streams.NewActivityStreamsLike()
+	object := streams.NewActivityStreamsObjectProperty()
+	object.AppendIRI(iri)
+	like.SetActivityStreamsObject(object)
+	return like
 }

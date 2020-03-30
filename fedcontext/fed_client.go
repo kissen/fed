@@ -43,4 +43,7 @@ type FedClient interface {
 	// Wrap event into an Create activity and submit
 	// it to the users outbox.
 	Create(event vocab.Type) error
+
+	// Like the object at iri.
+	Like(iri *url.URL) error
 }

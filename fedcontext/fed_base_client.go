@@ -27,6 +27,9 @@ type fedbaseclient struct {
 
 	// Function that gets invoked on Create calls.
 	create func(vocab.Type) error
+
+	// Function that gets invoked on Like calls.
+	like func(*url.URL) error
 }
 
 func (fc *fedbaseclient) fill(actorAddr string) error {
@@ -101,7 +104,7 @@ func (fc *fedbaseclient) Outbox() (fetch.Iter, error) {
 }
 
 func (fc *fedbaseclient) OutboxIRI() *url.URL {
-	return fc.inboxIRI
+	return fc.outboxIRI
 }
 
 func (fc *fedbaseclient) Liked() (fetch.Iter, error) {
@@ -122,6 +125,10 @@ func (fc *fedbaseclient) FollowersIRI() *url.URL {
 
 func (fc *fedbaseclient) Create(event vocab.Type) error {
 	return fc.create(event)
+}
+
+func (fc *fedbaseclient) Like(iri *url.URL) error {
+	return fc.like(iri)
 }
 
 func (fc *fedbaseclient) fetchCollection(target *url.URL) (fetch.Iter, error) {

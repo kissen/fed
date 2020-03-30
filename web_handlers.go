@@ -7,6 +7,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/template"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 	"net/url"
@@ -168,6 +169,8 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func WebPostLogout(w http.ResponseWriter, r *http.Request) {
+	log.Printf("WebPostLogout()")
+
 	// remove credentials and client from context
 	context := fedcontext.Context(r)
 	context.Token = nil
@@ -178,6 +181,8 @@ func WebPostLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func WebPostSubmit(w http.ResponseWriter, r *http.Request) {
+	log.Printf("WebPostSubmit()")
+
 	// check whether we have valid input
 
 	payload, ok := FormValue(r, "postinput")
@@ -234,13 +239,59 @@ func WebPostSubmit(w http.ResponseWriter, r *http.Request) {
 }
 
 func WebPostReply(w http.ResponseWriter, r *http.Request) {
+	log.Printf("WebPostReply()")
 	template.Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 func WebPostRepeat(w http.ResponseWriter, r *http.Request) {
+	log.Printf("WebPostRepeat()")
 	template.Error(w, r, http.StatusNotImplemented, nil, nil)
 }
 
 func WebPostLike(w http.ResponseWriter, r *http.Request) {
-	template.Error(w, r, http.StatusNotImplemented, nil, nil)
+	log.Printf("WebPostLike()")
+
+	iri, done := getIri(w, r)
+	if done {
+		return
+	}
+
+	client := fedcontext.Context(r).Client
+	if client == nil {
+		template.Error(w, r, http.StatusUnauthorized, nil, nil)
+		return
+	}
+
+	if err := client.Like(iri); err != nil {
+		template.Error(w, r, http.StatusBadGateway, err, nil)
+		return
+	}
+
+	fedcontext.Flash(r, "liked")
+	RedirectLocal(w, r, "/")
+}
+
+// Try to get the iri_base64 form value from POST request r.
+// If it is missing or malformed, this functions writes out
+// and error and returns (nil, true).
+func getIri(w http.ResponseWriter, r *http.Request) (iri *url.URL, handled bool) {
+	payload64, ok := FormValue(r, "iri_base64")
+	if !ok {
+		template.Error(w, r, http.StatusBadRequest, nil, nil)
+		return nil, true
+	}
+
+	payload, err := util.DecodeBase64ToString(payload64)
+	if err != nil {
+		template.Error(w, r, http.StatusBadRequest, err, nil)
+		return nil, true
+	}
+
+	iri, err = url.Parse(payload)
+	if err != nil {
+		template.Error(w, r, http.StatusBadRequest, err, nil)
+		return nil, true
+	}
+
+	return iri, false
 }
