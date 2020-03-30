@@ -1,8 +1,5 @@
--> unify authentication structs; display contents in web interface
-   and json format depending on this authentication level
+-> local likes
 
--> likes, replies
-
--> federation; start w/ others subscribing to us?
+-> likes of remote content
 
 -> once poc is completed: serious refactor
