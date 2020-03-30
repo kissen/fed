@@ -185,6 +185,10 @@ main > code {
     text-align: right;
 }
 
+.svgform {
+    display: inline-block;
+}
+
 .svgbutton {
     cursor: pointer;
     height: var(--medium);
