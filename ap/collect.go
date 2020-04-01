@@ -9,6 +9,10 @@ import (
 	"net/url"
 )
 
+// Given a list of IRIs, retrieve all these objects from local storage
+// and add them to an ordered collection page.
+//
+// As of now, we do not support any pagination.
 func collectPage(c context.Context, iris []*url.URL) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	items := streams.NewActivityStreamsOrderedItemsProperty()
 
@@ -26,6 +30,8 @@ func collectPage(c context.Context, iris []*url.URL) (vocab.ActivityStreamsOrder
 	return page, nil
 }
 
+// Given a list of IRIs, retrieve all these objects from local storage
+// and add them to an Activity Streams collection.
 func collectSet(c context.Context, iris []*url.URL) (vocab.ActivityStreamsCollection, error) {
 	items := streams.NewActivityStreamsItemsProperty()
 

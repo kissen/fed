@@ -47,6 +47,8 @@ func NewWith(status int, text string) error {
 	}
 }
 
+// Create a new error with format string and an HTTP status
+// code set.
 func NewfWith(status int, format string, formatargs ...interface{}) error {
 	err := Newf(format, formatargs...)
 	return WithStatus(status, err)
