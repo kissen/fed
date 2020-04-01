@@ -36,6 +36,11 @@ func BytesToVocab(bin []byte) (vocab.Type, error) {
 			return nil
 		},
 
+		func(c context.Context, like vocab.ActivityStreamsLike) error {
+			obj = like
+			return nil
+		},
+
 		func(c context.Context, note vocab.ActivityStreamsNote) error {
 			obj = note
 			return nil
