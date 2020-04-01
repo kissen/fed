@@ -8,8 +8,10 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/fediri"
+	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"gitlab.cs.fau.de/kissen/fed/prop"
 	"log"
+	"net/http"
 	"net/url"
 	"sync"
 )
@@ -270,8 +272,50 @@ func (f *FedDatabase) Create(c context.Context, asType vocab.Type) error {
 func (f *FedDatabase) Update(c context.Context, asType vocab.Type) error {
 	log.Println("Update()")
 
-	target := prop.Id(asType)
-	return fedcontext.From(c).Storage.StoreObject(target, asType)
+	id := prop.Id(asType)
+	iri := fediri.IRI{id}
+
+	log.Printf("\n\nid=%v\n\n", id)
+
+	// try out collections
+
+	if _, err := iri.InboxOwner(); err == nil {
+		return errors.NewWith(http.StatusNotImplemented, "update of inbox not supported")
+	}
+
+	if _, err := iri.OutboxOwner(); err == nil {
+		return errors.NewWith(http.StatusNotImplemented, "update of owner not supported")
+	}
+
+	if _, err := iri.FollowingOwner(); err == nil {
+		return errors.NewWith(http.StatusNotImplemented, "update of following not supported")
+	}
+
+	if _, err := iri.FollowersOwner(); err == nil {
+		return errors.NewWith(http.StatusNotImplemented, "update of followers not supported")
+	}
+
+	if _, err := iri.LikedOwner(); err == nil {
+		if liked, ok := asType.(vocab.ActivityStreamsCollection); !ok {
+			return errors.NewfWith(http.StatusInternalServerError, "bad runtime type %T for liked collection", asType)
+		} else {
+			return f.updateLiked(c, iri, liked)
+		}
+	}
+
+	// try out actors
+
+	if _, err := iri.Actor(); err == nil {
+		if person, ok := asType.(vocab.ActivityStreamsPerson); !ok {
+			return errors.NewfWith(http.StatusInternalServerError, "bad runtime type %T for actor", asType)
+		} else {
+			return f.updatePerson(c, iri, person)
+		}
+	}
+
+	// try storage as a last resort
+
+	return fedcontext.From(c).Storage.StoreObject(id, asType)
 }
 
 // Delete removes the entry with the given id.
@@ -354,7 +398,7 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 	} else if set, err := collectSet(c, user.Followers); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		prop.SetIdOn(set, iri.URL())
+		prop.SetIdOn(set, fediri.FollowersIRI(user.Name).URL())
 		return set, nil
 	}
 }
@@ -375,7 +419,7 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 	} else if set, err := collectSet(c, user.Following); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		prop.SetIdOn(set, iri.URL())
+		prop.SetIdOn(set, fediri.FollowingIRI(user.Name).URL())
 		return set, nil
 	}
 }
@@ -396,11 +440,12 @@ func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers voc
 	} else if set, err := collectSet(c, user.Liked); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		prop.SetIdOn(set, iri.URL())
+		prop.SetIdOn(set, fediri.LikedIRI(user.Name).URL())
 		return set, nil
 	}
 }
 
+// Return the ActivityStreams representation of the actor at actorIRI.
 func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor vocab.ActivityStreamsPerson, err error) {
 	// look up the user
 
@@ -441,11 +486,75 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 	liked.SetIRI(fediri.LikedIRI(user.Name).URL())
 	actor.SetActivityStreamsLiked(liked)
 
-	likes := streams.NewActivityStreamsLikesProperty()
-	likes.SetIRI(fediri.LikedIRI(user.Name).URL())
-	actor.SetActivityStreamsLiked(liked)
-
 	return actor, nil
+}
+
+func (f *FedDatabase) updateLiked(c context.Context, actoriri fediri.IRI, liked vocab.ActivityStreamsCollection) error {
+	// XXX: racy: need transactions
+
+	storage := fedcontext.From(c).Storage
+
+	username, err := actoriri.LikedOwner()
+	if err != nil {
+		return err
+	}
+
+	user, err := storage.RetrieveUser(username)
+	if err != nil {
+		return err
+	}
+
+	user.Liked, err = f.iris(liked)
+	if err != nil {
+		return errors.Wrap(err, "bad liked collection")
+	}
+
+	return storage.StoreUser(user)
+}
+
+// Update actor which should represent a user on our instance. In particular, update
+// the liked, follows (and so on) collections.
+func (f *FedDatabase) updatePerson(c context.Context, actoriri fediri.IRI, actor vocab.ActivityStreamsPerson) error {
+	storage := fedcontext.From(c).Storage
+
+	// fetch metadata from the database
+
+	username, err := actoriri.Actor()
+	if err != nil {
+		return err
+	}
+
+	user, err := storage.RetrieveUser(username)
+	if err != nil {
+		return err
+	}
+
+	// for each supported collection, fetch the iris and update
+	// the user meta data accordingly
+
+	user.Followers, err = f.iris(actor.GetActivityStreamsFollowers)
+	if err != nil {
+		return errors.Wrap(err, "bad followers collection")
+	}
+
+	user.Following, err = f.iris(actor.GetActivityStreamsFollowing)
+	if err != nil {
+		return errors.Wrap(err, "bad following collection")
+	}
+
+	user.Liked, err = f.iris(actor.GetActivityStreamsLiked)
+	if err != nil {
+		return errors.Wrap(err, "bad liked collection")
+	}
+
+	// update
+	// XXX: racy; use transactions here (see also /NEXTUP.md)
+
+	if err := storage.StoreUser(user); err != nil {
+		return errors.Wrap(err, "overwriting user failed")
+	}
+
+	return nil
 }
 
 // Ensure that all objects in collection are part of our storage. Returns a
@@ -475,4 +584,13 @@ func (f *FedDatabase) addToStorage(c context.Context, collection vocab.ActivityS
 	}
 
 	return
+}
+
+func (f *FedDatabase) iris(from interface{}) ([]*url.URL, error) {
+	it, err := fetch.Begin(from)
+	if err != nil {
+		return nil, err
+	}
+
+	return fetch.IRIs(it)
 }

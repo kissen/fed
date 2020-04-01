@@ -91,6 +91,9 @@ func wrap(target vocab.Type) (*webVocab, error) {
 	case vocab.ActivityStreamsPerson:
 		page = "res/person.fragment.tmpl"
 
+	case vocab.ActivityStreamsCollection:
+		page = "res/collection_page.fragment.tmpl"
+
 	case vocab.ActivityStreamsOrderedCollectionPage:
 		page = "res/ordered_collection_page.fragment.tmpl"
 

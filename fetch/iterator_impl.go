@@ -203,7 +203,7 @@ func begin(iterable interface{}) (Iter, error) {
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("type=%T not supported", iterable)
+		return nil, fmt.Errorf("type=%T not iterable", iterable)
 	}
 }
 

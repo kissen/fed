@@ -1,0 +1,9 @@
+{{range .XChildren}}
+       {{.Fragment}}
+{{else}}
+	<div class="card">
+		<p style="text-align: center; font-style: italic">
+			no entries in <code>{{.Id}}</code>
+		</p>
+	</div>
+{{end}}

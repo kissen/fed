@@ -51,6 +51,11 @@ func BytesToVocab(bin []byte) (vocab.Type, error) {
 			return nil
 		},
 
+		func(c context.Context, collection vocab.ActivityStreamsCollection) error {
+			obj = collection
+			return nil
+		},
+
 		func(c context.Context, oc vocab.ActivityStreamsOrderedCollection) error {
 			obj = oc
 			return nil

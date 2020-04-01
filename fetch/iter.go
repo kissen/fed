@@ -57,6 +57,10 @@ func Begin(iterable interface{}) (Iter, error) {
 	}
 
 	switch v := iterable.(type) {
+	case vocab.ActivityStreamsCollection:
+		items := v.GetActivityStreamsItems()
+		return begin(items)
+
 	case vocab.ActivityStreamsOrderedCollectionPage:
 		items := v.GetActivityStreamsOrderedItems()
 		return begin(items)

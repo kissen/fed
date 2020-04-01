@@ -129,7 +129,7 @@ def emit_constructor():
         emit_constructor_for(itername)
 
     print('	default:')
-    print('		return nil, fmt.Errorf("type=%T not supported", iterable)')
+    print('		return nil, fmt.Errorf("type=%T not iterable", iterable)')
     print('	}')
     print('}')
 

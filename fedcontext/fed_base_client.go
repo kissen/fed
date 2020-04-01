@@ -112,7 +112,7 @@ func (fc *fedbaseclient) Liked() (fetch.Iter, error) {
 }
 
 func (fc *fedbaseclient) LikedIRI() *url.URL {
-	return fc.inboxIRI
+	return fc.likedIRI
 }
 
 func (fc *fedbaseclient) Followers() (fetch.Iter, error) {
