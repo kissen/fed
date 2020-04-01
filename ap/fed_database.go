@@ -147,7 +147,7 @@ func (f *FedDatabase) ActorForOutbox(c context.Context, outboxIRI *url.URL) (act
 	}
 }
 
-// ActorForInbox fetches the actor's IRI for the given outbox IRI.
+// ActorForInbox fetches the actor's IRI for the given inbox IRI.
 //
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) ActorForInbox(c context.Context, inboxIRI *url.URL) (actorIRI *url.URL, err error) {
