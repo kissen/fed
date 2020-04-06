@@ -453,14 +453,15 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 
 	iri := fediri.IRI{actorIRI}
 
-	if user, err = retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err = retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, errors.Wrap(err, "not an actor")
 	}
 
 	// build up the actor object
 
 	actor = streams.NewActivityStreamsPerson()
-	prop.SetIdOn(actor, iri.URL())
+	prop.SetIdOn(actor, fediri.ActorIRI(user.Name).URL())
 
 	name := streams.NewActivityStreamsNameProperty()
 	name.AppendXMLSchemaString(user.Name)
