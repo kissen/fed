@@ -305,7 +305,8 @@ func (f *FedFederatingProtocol) GetInbox(c context.Context, r *http.Request) (vo
 	} else if page, err := collectPage(c, user.Inbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		prop.SetIdOn(page, iri.URL())
+		inboxIri := fediri.OutboxIRI(user.Name).URL()
+		prop.SetIdOn(page, inboxIri)
 		return page, nil
 	}
 }

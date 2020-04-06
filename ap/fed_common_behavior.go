@@ -82,7 +82,8 @@ func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab
 	} else if page, err := collectPage(c, user.Outbox); err != nil {
 		return nil, errors.Wrap(err, "collect failed")
 	} else {
-		prop.SetIdOn(page, iri.URL())
+		outboxIri := fediri.OutboxIRI(user.Name).URL()
+		prop.SetIdOn(page, outboxIri)
 		return page, nil
 	}
 }

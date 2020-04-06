@@ -9,7 +9,7 @@ import (
 
 type FedConfig struct {
 	// Base URL under which this instance should be reachable at.
-	Base  *url.URL
+	Base *url.URL
 
 	// Location of the FedStorage database file.
 	Store string
