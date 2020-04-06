@@ -67,6 +67,7 @@ func InstallAdminHandlers(router *mux.Router) {
 func InstallWellKnownHandlers(router *mux.Router) {
 	router.HandleFunc("/.well-known/nodeinfo", GetNodeInfo).Methods("GET")
 	router.HandleFunc("/.well-known/nodeinfo/2.0.json", GetNodeInfo20).Methods("GET")
+	router.HandleFunc("/.well-known/webfinger", GetWebfinger).Methods("GET")
 }
 
 // Install the actually interesting handlers. These handlers will differentiate

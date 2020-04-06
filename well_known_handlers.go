@@ -2,10 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"gitlab.cs.fau.de/kissen/fed/config"
+	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"log"
 	"net/http"
 	"path"
+	"strings"
 )
 
 // GET /.well-known/nodeinfo
@@ -62,6 +66,70 @@ func GetNodeInfo20(w http.ResponseWriter, r *http.Request) {
 			"nodeDescrption": "development instance",
 			"nodeName":       config.Get().Base,
 			"private":        false,
+		},
+	}
+
+	ReplyWithJSON(w, r, reply)
+}
+
+// GET /.well-known/webfinger?resource=...
+func GetWebfinger(w http.ResponseWriter, r *http.Request) {
+	storage := fedcontext.Context(r).Storage
+	configuration := config.Get()
+
+	resource, ok := FormValue(r, "resource")
+	if !ok {
+		ApiError(w, r, "missing resource", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.HasPrefix(resource, "acct:") {
+		ApiError(w, r, "only acct supported", http.StatusNotImplemented)
+		return
+	}
+
+	qs := strings.TrimPrefix(resource, "acct:")
+
+	q := strings.Split(qs, "@")
+	if len(q) != 2 {
+		ApiError(w, r, "acct needs to have format username@server", http.StatusBadRequest)
+		return
+	}
+
+	username := q[0]
+	hostname := q[1]
+
+	if hostname != configuration.Base.Hostname() {
+		msg := fmt.Sprintf("bad hostname got=%v expected=%v", hostname, configuration.Base.Hostname())
+		ApiError(w, r, msg, http.StatusBadRequest)
+		return
+	}
+
+	if _, err := storage.RetrieveUser(username); err != nil {
+		ApiError(w, r, err, http.StatusNotFound)
+		return
+	}
+
+	href := fediri.ActorIRI(username).String()
+
+	reply := map[string]interface{}{
+		"subject": fmt.Sprintf("acct:%v@%v", username, hostname),
+		"links": []interface{}{
+			map[string]interface{}{
+				"href": href,
+				"rel":  "http://webfinger.net/rel/profile-page",
+				"type": "text/html",
+			},
+			map[string]interface{}{
+				"href": href,
+				"rel":  "self",
+				"type": "application/activity+json",
+			},
+			map[string]interface{}{
+				"href": href,
+				"rel":  "self",
+				"type": AP_TYPE,
+			},
 		},
 	}
 
