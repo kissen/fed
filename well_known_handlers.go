@@ -136,6 +136,23 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 	ReplyWithJSON(w, r, reply)
 }
 
+// GET /.well-known/host-meta
+func GetHostMeta(w http.ResponseWriter, r *http.Request) {
+	format := `<?xml version="1.0" encoding="UTF-8"?>` + "\n" +
+		`<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">` + "\n" +
+		`  <Link rel="lrdd" type="application/xrd+xml" template="https://%s/.well-known/webfinger?resource={uri}"/>` + "\n" +
+		`</XRD>` + "\n"
+
+	xml := fmt.Sprintf(format, config.Get().Base.Host)
+	bs := []byte(xml)
+
+	w.Header().Add("Content-Type", "application/xrd+xml; charset=utf-8")
+
+	if _, err := w.Write(bs); err != nil {
+		log.Printf("writing xml to client failed: %v", err)
+	}
+}
+
 func ReplyWithJSON(w http.ResponseWriter, r *http.Request, m map[string]interface{}) {
 	bs, err := json.Marshal(m)
 	if err != nil {

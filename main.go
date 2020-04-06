@@ -68,6 +68,7 @@ func InstallWellKnownHandlers(router *mux.Router) {
 	router.HandleFunc("/.well-known/nodeinfo", GetNodeInfo).Methods("GET")
 	router.HandleFunc("/.well-known/nodeinfo/2.0.json", GetNodeInfo20).Methods("GET")
 	router.HandleFunc("/.well-known/webfinger", GetWebfinger).Methods("GET")
+	router.HandleFunc("/.well-known/host-meta", GetHostMeta).Methods("GET")
 }
 
 // Install the actually interesting handlers. These handlers will differentiate
@@ -129,7 +130,7 @@ func main() {
 	InstallErrorHandlers(router)
 	InstallMiddleware(storage, router)
 
-	addr := config.Get().Base.Host
+	addr := "[::]:4040"
 	log.Printf("starting on addr=%v...", addr)
 	Must(http.ListenAndServe(addr, router))
 }
