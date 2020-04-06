@@ -63,6 +63,12 @@ func InstallAdminHandlers(router *mux.Router) {
 	router.HandleFunc(`/{username:[A-Za-z]+}`, PutUser).Methods("PUT")
 }
 
+// Install the handlers for all /.well-known services.
+func InstallWellKnownHandlers(router *mux.Router) {
+	router.HandleFunc("/.well-known/nodeinfo", GetNodeInfo).Methods("GET")
+	router.HandleFunc("/.well-known/nodeinfo/2.0.json", GetNodeInfo20).Methods("GET")
+}
+
 // Install the actually interesting handlers. These handlers will differentiate
 // between Content-Type/Accept headers and either send out JSON for ActivityPub
 // or a gaudy web interface instead.
@@ -86,6 +92,9 @@ func InstallSplitHandlers(router *mux.Router) {
 	router.HandleFunc("/like", PostLike).Methods("POST")
 
 	// catchall for activity pub
+	//
+	// TODO: remove this; in general, be more specific and get rid of that
+	// stupid file split_handlers.go!
 	router.PathPrefix("/").HandlerFunc(ApGetPostActivity).Methods("GET", "POST")
 }
 
@@ -112,6 +121,7 @@ func main() {
 	sr := router.PathPrefix(config.Get().Base.Path).Subrouter()
 
 	InstallOAuthHandlers(sr)
+	InstallWellKnownHandlers(sr)
 	InstallAdminHandlers(sr)
 	InstallSplitHandlers(sr) // includes catchall
 
