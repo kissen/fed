@@ -114,6 +114,9 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 
 	reply := map[string]interface{}{
 		"subject": fmt.Sprintf("acct:%v@%v", username, hostname),
+		"aliases": []string{
+			href,
+		},
 		"links": []interface{}{
 			map[string]interface{}{
 				"href": href,
