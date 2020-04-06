@@ -74,6 +74,8 @@ func GetNodeInfo20(w http.ResponseWriter, r *http.Request) {
 
 // GET /.well-known/webfinger?resource=...
 func GetWebfinger(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetWebfinger(%v)", r.URL.RawQuery)
+
 	storage := fedcontext.Context(r).Storage
 	configuration := config.Get()
 
@@ -141,6 +143,8 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 
 // GET /.well-known/host-meta
 func GetHostMeta(w http.ResponseWriter, r *http.Request) {
+	log.Println("GetHostMeta()")
+
 	format := `<?xml version="1.0" encoding="UTF-8"?>` + "\n" +
 		`<XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">` + "\n" +
 		`  <Link rel="lrdd" type="application/xrd+xml" template="https://%s/.well-known/webfinger?resource={uri}"/>` + "\n" +
