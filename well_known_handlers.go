@@ -167,7 +167,7 @@ func ReplyWithJSON(w http.ResponseWriter, r *http.Request, m map[string]interfac
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
 
 	if _, err := w.Write(bs); err != nil {
 		log.Printf("writing json to client failed: %v", err)
