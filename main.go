@@ -48,6 +48,13 @@ func CreateProxies() (pub.FederatingActor, pub.HandlerFunc) {
 	return actor, handler
 }
 
+// Install the admin handlers. The idea is that we write some admin tool
+// that runs on the same machine as fed itself interacts with these admin handlers.
+// I think that's easier than bothering with a web gui for configuration for now.
+func InstallAdminHandlers(router *mux.Router) {
+	router.HandleFunc(`/{username:[A-Za-z]+}`, PutUser).Methods("PUT")
+}
+
 // Install the OAuth2 handlers. These handlers take care of authorization
 // using codes and tokens are quite important for useful federation.
 func InstallOAuthHandlers(router *mux.Router) {
@@ -56,19 +63,18 @@ func InstallOAuthHandlers(router *mux.Router) {
 	router.HandleFunc("/oauth/token", PostOAuthToken).Methods("POST")
 }
 
-// Install the admin handlers. The idea is that we write some admin tool
-// that runs on the same machine as fed itself interacts with these admin handlers.
-// I think that's easier than bothering with a web gui for configuration for now.
-func InstallAdminHandlers(router *mux.Router) {
-	router.HandleFunc(`/{username:[A-Za-z]+}`, PutUser).Methods("PUT")
-}
-
 // Install the handlers for all /.well-known services.
 func InstallWellKnownHandlers(router *mux.Router) {
 	router.HandleFunc("/.well-known/nodeinfo", GetNodeInfo).Methods("GET")
 	router.HandleFunc("/.well-known/nodeinfo/2.0.json", GetNodeInfo20).Methods("GET")
 	router.HandleFunc("/.well-known/webfinger", GetWebfinger).Methods("GET")
 	router.HandleFunc("/.well-known/host-meta", GetHostMeta).Methods("GET")
+}
+
+// Install handlers that are really just workaround and redirects
+// to deal with weirdness on the fediverse.
+func InstallShimHandlers(router *mux.Router) {
+	router.HandleFunc("/ostatus_subscribe", GetOStatusSubscribe).Methods("GET")
 }
 
 // Install the actually interesting handlers. These handlers will differentiate
@@ -122,9 +128,10 @@ func main() {
 	router := mux.NewRouter().StrictSlash(false)
 	sr := router.PathPrefix(config.Get().Base.Path).Subrouter()
 
+	InstallAdminHandlers(sr)
 	InstallOAuthHandlers(sr)
 	InstallWellKnownHandlers(sr)
-	InstallAdminHandlers(sr)
+	InstallShimHandlers(sr)
 	InstallSplitHandlers(sr) // includes catchall
 
 	InstallErrorHandlers(router)

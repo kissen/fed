@@ -112,7 +112,14 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// href is the address of the given actor
 	href := fediri.ActorIRI(username).String()
+
+	// build up the oauth_subscribe address used by a certain hairy
+	// elephant
+	subscribe := *configuration.Base
+	subscribe.Path = path.Join(subscribe.Path, "ostatus_subscribe")
+	subscribeTemplate := fmt.Sprintf("%v?acct={uri}", subscribe.String())
 
 	reply := map[string]interface{}{
 		"subject": fmt.Sprintf("acct:%v@%v", username, hostname),
@@ -134,6 +141,10 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 				"href": href,
 				"rel":  "self",
 				"type": AP_TYPE,
+			},
+			map[string]interface{}{
+				"rel":      "http://ostatus.org/schema/1.0/subscribe",
+				"template": subscribeTemplate,
 			},
 		},
 	}
