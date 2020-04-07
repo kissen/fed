@@ -75,14 +75,17 @@ func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.Acti
 
 	iri := fediri.IRI{inboxIRI}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, err
-	} else if page, err := collectPage(c, user.Inbox); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		prop.SetIdOn(page, iri.URL())
-		return page, nil
 	}
+
+	inbox := prop.ToPage(user.Inbox)
+
+	id := fediri.InboxIRI(user.Name).URL()
+	prop.SetIdOn(inbox, id)
+
+	return inbox, nil
 }
 
 // SetInbox saves the inbox value given from GetInbox, with new items
@@ -339,14 +342,17 @@ func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vo
 
 	iri := fediri.IRI{outboxIRI}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
-		return nil, errors.Wrap(err, "no such outbox")
-	} else if page, err := collectPage(c, user.Outbox); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		prop.SetIdOn(page, iri.URL())
-		return page, nil
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
+		return nil, err
 	}
+
+	outbox := prop.ToPage(user.Outbox)
+
+	id := fediri.OutboxIRI(user.Name).URL()
+	prop.SetIdOn(outbox, id)
+
+	return outbox, nil
 }
 
 // SetOutbox saves the outbox value given from GetOutbox, with new items
@@ -393,14 +399,17 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 
 	iri := fediri.IRI{actorIRI}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, err
-	} else if set, err := collectSet(c, user.Followers); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		prop.SetIdOn(set, fediri.FollowersIRI(user.Name).URL())
-		return set, nil
 	}
+
+	followers = prop.ToCollection(user.Followers)
+
+	id := fediri.FollowersIRI(user.Name).URL()
+	prop.SetIdOn(followers, id)
+
+	return followers, nil
 }
 
 // Following obtains the Following Collection for an actor with the
@@ -409,19 +418,22 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 // If modified, the library will then call Update.
 //
 // The library makes this call only after acquiring a lock first.
-func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
+func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (following vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Following(%v)", actorIRI)
 
 	iri := fediri.IRI{actorIRI}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, err
-	} else if set, err := collectSet(c, user.Following); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		prop.SetIdOn(set, fediri.FollowingIRI(user.Name).URL())
-		return set, nil
 	}
+
+	following = prop.ToCollection(user.Following)
+
+	id := fediri.FollowingIRI(user.Name).URL()
+	prop.SetIdOn(following, id)
+
+	return following, nil
 }
 
 // Liked obtains the Liked Collection for an actor with the
@@ -430,19 +442,22 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (followers
 // If modified, the library will then call Update.
 //
 // The library makes this call only after acquiring a lock first.
-func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
+func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (liked vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Liked(%v)", actorIRI)
 
 	iri := fediri.IRI{actorIRI}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, err
-	} else if set, err := collectSet(c, user.Liked); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		prop.SetIdOn(set, fediri.LikedIRI(user.Name).URL())
-		return set, nil
 	}
+
+	liked = prop.ToCollection(user.Liked)
+
+	id := fediri.LikedIRI(user.Name).URL()
+	prop.SetIdOn(liked, id)
+
+	return liked, nil
 }
 
 // Return the ActivityStreams representation of the actor at actorIRI.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"gitlab.cs.fau.de/kissen/fed/prop"
@@ -77,15 +76,17 @@ func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab
 
 	iri := fediri.IRI{r.URL}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, err
-	} else if page, err := collectPage(c, user.Outbox); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		outboxIri := fediri.OutboxIRI(user.Name).URL()
-		prop.SetIdOn(page, outboxIri)
-		return page, nil
 	}
+
+	outbox := prop.ToPage(user.Outbox)
+
+	id := fediri.OutboxIRI(user.Name).URL()
+	prop.SetIdOn(outbox, id)
+
+	return outbox, nil
 }
 
 // NewTransport returns a new Transport on behalf of a specific actor.

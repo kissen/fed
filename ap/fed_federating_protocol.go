@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/errors"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"gitlab.cs.fau.de/kissen/fed/prop"
@@ -300,13 +299,15 @@ func (f *FedFederatingProtocol) GetInbox(c context.Context, r *http.Request) (vo
 
 	iri := fediri.IRI{r.URL}
 
-	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err != nil {
+	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
+	if err != nil {
 		return nil, err
-	} else if page, err := collectPage(c, user.Inbox); err != nil {
-		return nil, errors.Wrap(err, "collect failed")
-	} else {
-		inboxIri := fediri.OutboxIRI(user.Name).URL()
-		prop.SetIdOn(page, inboxIri)
-		return page, nil
 	}
+
+	inbox := prop.ToPage(user.Inbox)
+
+	id := fediri.InboxIRI(user.Name).URL()
+	prop.SetIdOn(inbox, id)
+
+	return inbox, nil
 }
