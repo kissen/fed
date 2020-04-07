@@ -4,9 +4,6 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/fediri"
-	"gitlab.cs.fau.de/kissen/fed/prop"
 	"log"
 	"net/http"
 	"net/url"
@@ -73,20 +70,7 @@ func (f *FedCommonBehavior) AuthenticateGetOutbox(c context.Context, w http.Resp
 // API is enabled.
 func (f *FedCommonBehavior) GetOutbox(c context.Context, r *http.Request) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Println("GetOutbox()")
-
-	iri := fediri.IRI{r.URL}
-
-	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	outbox := prop.ToPage(user.Outbox)
-
-	id := fediri.OutboxIRI(user.Name).URL()
-	prop.SetIdOn(outbox, id)
-
-	return outbox, nil
+	return pageFor(c, r.URL, "Outbox")
 }
 
 // NewTransport returns a new Transport on behalf of a specific actor.

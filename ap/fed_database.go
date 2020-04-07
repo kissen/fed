@@ -72,20 +72,7 @@ func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (cont
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) GetInbox(c context.Context, inboxIRI *url.URL) (vocab.ActivityStreamsOrderedCollectionPage, error) {
 	log.Printf("GetInbox(%v)", inboxIRI)
-
-	iri := fediri.IRI{inboxIRI}
-
-	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	inbox := prop.ToPage(user.Inbox)
-
-	id := fediri.InboxIRI(user.Name).URL()
-	prop.SetIdOn(inbox, id)
-
-	return inbox, nil
+	return pageFor(c, inboxIRI, "Inbox")
 }
 
 // SetInbox saves the inbox value given from GetInbox, with new items
@@ -237,11 +224,7 @@ func (f *FedDatabase) Get(c context.Context, addr *url.URL) (value vocab.Type, e
 
 	// try serving plain documents
 
-	if obj, err := fedcontext.From(c).Storage.RetrieveObject(iri.URL()); err != nil {
-		return nil, errors.Wrapf(err, "cannot retrieve addr=%v", iri)
-	} else {
-		return obj, nil
-	}
+	return f.getStorage(c, iri.URL())
 }
 
 // Create adds a new entry to the database which must be able to be
@@ -339,20 +322,7 @@ func (f *FedDatabase) Delete(c context.Context, id *url.URL) error {
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) GetOutbox(c context.Context, outboxIRI *url.URL) (inbox vocab.ActivityStreamsOrderedCollectionPage, err error) {
 	log.Printf("GetOutbox(%v)", outboxIRI)
-
-	iri := fediri.IRI{outboxIRI}
-
-	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	outbox := prop.ToPage(user.Outbox)
-
-	id := fediri.OutboxIRI(user.Name).URL()
-	prop.SetIdOn(outbox, id)
-
-	return outbox, nil
+	return pageFor(c, outboxIRI, "Outbox")
 }
 
 // SetOutbox saves the outbox value given from GetOutbox, with new items
@@ -396,20 +366,7 @@ func (f *FedDatabase) NewId(c context.Context, t vocab.Type) (id *url.URL, err e
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Followers(%v)", actorIRI)
-
-	iri := fediri.IRI{actorIRI}
-
-	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	followers = prop.ToCollection(user.Followers)
-
-	id := fediri.FollowersIRI(user.Name).URL()
-	prop.SetIdOn(followers, id)
-
-	return followers, nil
+	return collectionFor(c, actorIRI, "Followers")
 }
 
 // Following obtains the Following Collection for an actor with the
@@ -420,20 +377,7 @@ func (f *FedDatabase) Followers(c context.Context, actorIRI *url.URL) (followers
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (following vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Following(%v)", actorIRI)
-
-	iri := fediri.IRI{actorIRI}
-
-	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	following = prop.ToCollection(user.Following)
-
-	id := fediri.FollowingIRI(user.Name).URL()
-	prop.SetIdOn(following, id)
-
-	return following, nil
+	return collectionFor(c, actorIRI, "Following")
 }
 
 // Liked obtains the Liked Collection for an actor with the
@@ -444,20 +388,7 @@ func (f *FedDatabase) Following(c context.Context, actorIRI *url.URL) (following
 // The library makes this call only after acquiring a lock first.
 func (f *FedDatabase) Liked(c context.Context, actorIRI *url.URL) (liked vocab.ActivityStreamsCollection, err error) {
 	log.Printf("Liked(%v)", actorIRI)
-
-	iri := fediri.IRI{actorIRI}
-
-	user, err := retrieveOwner(&iri, fedcontext.From(c).Storage)
-	if err != nil {
-		return nil, err
-	}
-
-	liked = prop.ToCollection(user.Liked)
-
-	id := fediri.LikedIRI(user.Name).URL()
-	prop.SetIdOn(liked, id)
-
-	return liked, nil
+	return collectionFor(c, actorIRI, "Liked")
 }
 
 // Return the ActivityStreams representation of the actor at actorIRI.
@@ -503,6 +434,19 @@ func (f *FedDatabase) getActor(c context.Context, actorIRI *url.URL) (actor voca
 	actor.SetActivityStreamsLiked(liked)
 
 	return actor, nil
+}
+
+func (f *FedDatabase) getStorage(c context.Context, addr *url.URL) (vocab.Type, error) {
+	log.Printf("getStorage(%v)", addr)
+
+	iri := fediri.IRI{addr}
+	storage := fedcontext.From(c).Storage
+
+	if obj, err := storage.RetrieveObject(iri.URL()); err != nil {
+		return nil, errors.Wrapf(err, "cannot retrieve addr=%v from storage", iri)
+	} else {
+		return obj, nil
+	}
 }
 
 func (f *FedDatabase) updateLiked(c context.Context, actoriri fediri.IRI, liked vocab.ActivityStreamsCollection) error {
