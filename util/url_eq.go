@@ -1,9 +1,9 @@
-package ap
+package util
 
 import "net/url"
 
 // Return whether a and b are equal.
-func urlEq(a, b *url.URL) bool {
+func UrlEq(a, b *url.URL) bool {
 	// if both are nil, they are the same
 
 	if a == nil && b == nil {
@@ -31,9 +31,9 @@ func urlEq(a, b *url.URL) bool {
 
 // Return whether haystack contains an URL that we consider equal
 // to needle.
-func urlIn(needle *url.URL, haystack []*url.URL) bool {
+func UrlIn(needle *url.URL, haystack []*url.URL) bool {
 	for _, hay := range haystack {
-		if urlEq(hay, needle) {
+		if UrlEq(hay, needle) {
 			return true
 		}
 	}
@@ -43,9 +43,9 @@ func urlIn(needle *url.URL, haystack []*url.URL) bool {
 
 // Return whether any of the slices in haystacks contains an URL that
 // we consider equal to needle.
-func urlInAny(needle *url.URL, haystacks [][]*url.URL) bool {
+func UrlInAny(needle *url.URL, haystacks [][]*url.URL) bool {
 	for _, haystack := range haystacks {
-		if urlIn(needle, haystack) {
+		if UrlIn(needle, haystack) {
 			return true
 		}
 	}

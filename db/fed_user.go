@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"net/url"
 )
 
@@ -40,6 +41,21 @@ func (u *FedUser) SetPassword(password string) {
 func (u *FedUser) PasswordOK(password string) bool {
 	hash := u.hash(password)
 	return bytes.Compare(hash, u.PasswordSHA256) == 0
+}
+
+// Returns whether this user is following whatever is at id.
+func (u *FedUser) IsFollowing(id *url.URL) bool {
+	return util.UrlIn(id, u.Following)
+}
+
+// Returns whether id is following this user.
+func (u *FedUser) IsFollowedBy(id *url.URL) bool {
+	return util.UrlIn(id, u.Followers)
+}
+
+// Returns whether this user liked whawtever is at id.
+func (u *FedUser) HasLiked(id *url.URL) bool {
+	return util.UrlIn(id, u.Liked)
 }
 
 func (u *FedUser) String() string {

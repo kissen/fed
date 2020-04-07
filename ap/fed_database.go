@@ -10,6 +10,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"gitlab.cs.fau.de/kissen/fed/prop"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 	"net/url"
@@ -62,7 +63,7 @@ func (f *FedDatabase) InboxContains(c context.Context, inbox, id *url.URL) (cont
 	if user, err := retrieveOwner(&inboxIri, fedcontext.From(c).Storage); err != nil {
 		return false, err
 	} else {
-		return urlIn(id, user.Inbox), nil
+		return util.UrlIn(id, user.Inbox), nil
 	}
 }
 
@@ -114,7 +115,7 @@ func (f *FedDatabase) Owns(c context.Context, id *url.URL) (owns bool, err error
 	iri := fediri.IRI{id}
 
 	if user, err := retrieveOwner(&iri, fedcontext.From(c).Storage); err == nil {
-		if urlInAny(id, user.Collections()) {
+		if util.UrlInAny(id, user.Collections()) {
 			return true, nil
 		}
 	}
