@@ -9,6 +9,9 @@ import (
 // A client that can be used to issue command from the point of
 // view of an actor on the ActivityPub fediverse.
 type FedClient interface {
+	// The name of this user.
+	Username() string
+
 	// Return the clients actor IRI.
 	IRI() *url.URL
 

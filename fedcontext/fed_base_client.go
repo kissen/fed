@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/fediri"
 	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"net/url"
 )
 
 // Implements FedClient.
 type fedbaseclient struct {
+	username string
+
 	// IRI pointing to the actor that "owns" this client.
 	iri *url.URL
 
@@ -36,6 +39,11 @@ func (fc *fedbaseclient) fill(actorAddr string) error {
 	var err error
 
 	fc.iri, err = url.Parse(actorAddr)
+	if err != nil {
+		return errors.Wrap(err, "bad actor address")
+	}
+
+	fc.username, err = fediri.IRI{fc.iri}.Actor()
 	if err != nil {
 		return errors.Wrap(err, "bad actor address")
 	}
@@ -71,6 +79,10 @@ func (fc *fedbaseclient) fill(actorAddr string) error {
 	}
 
 	return nil
+}
+
+func (fc *fedbaseclient) Username() string {
+	return fc.username
 }
 
 func (fc *fedbaseclient) IRI() *url.URL {
