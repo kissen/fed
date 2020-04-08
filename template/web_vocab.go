@@ -230,7 +230,17 @@ func (v *webVocab) XChildren() []*webVocab {
 // Returns whether the currently logged in user has liked this
 // item.
 func (v *webVocab) XLiked() bool {
-	return false
+	storage := v.fc.Storage
+	client := v.fc.Client
+
+	user, err := storage.RetrieveUser(client.Username())
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	id := prop.Id(v.target)
+	return user.HasLiked(id)
 }
 
 func (v *webVocab) XObject() []*webVocab {

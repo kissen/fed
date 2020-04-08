@@ -25,10 +25,17 @@
 			<input class="svgbutton" type="image" src="/static/repeat.svg" title="Repeat" />
 		</form>
 
-		<form class="svgform" action="/like" method="post">
-			<input type="hidden" name="iri_base64" value="{{.XIdBase64}}" />
-			<input class="svgbutton" type="image" src="/static/like.svg" title="Like" />
-		</form>
+		{{if not .XLiked}}
+			<form class="svgform" action="/like" method="post">
+				<input type="hidden" name="iri_base64" value="{{.XIdBase64}}" />
+				<input class="svgbutton" type="image" src="/static/like.svg" title="Like" />
+			</form>
+		{{else}}
+			<form class="svgform" action="/like" method="post">
+				<input type="hidden" name="iri_base64" value="{{.XIdBase64}}" />
+				<input class="svgbutton" type="image" src="/static/like-active.svg" title="Like" />
+			</form>
+		{{end}}
 	</div>
 
 </div>
