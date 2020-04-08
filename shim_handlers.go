@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 	"path"
@@ -13,7 +14,7 @@ import (
 func GetOStatusSubscribe(w http.ResponseWriter, r *http.Request) {
 	log.Println("GetOstatusSubscribe()")
 
-	acct, ok := FormValue(r, "acct")
+	acct, ok := util.FormValue(r, "acct")
 	if !ok {
 		ApiError(w, r, "missing acct", http.StatusBadRequest)
 		return

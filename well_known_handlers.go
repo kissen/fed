@@ -6,6 +6,7 @@ import (
 	"gitlab.cs.fau.de/kissen/fed/config"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/fediri"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 	"path"
@@ -79,7 +80,7 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 	storage := fedcontext.Context(r).Storage
 	configuration := config.Get()
 
-	resource, ok := FormValue(r, "resource")
+	resource, ok := util.FormValue(r, "resource")
 	if !ok {
 		ApiError(w, r, "missing resource", http.StatusBadRequest)
 		return
@@ -140,7 +141,7 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 			map[string]interface{}{
 				"href": href,
 				"rel":  "self",
-				"type": AP_TYPE,
+				"type": util.AP_TYPE,
 			},
 			map[string]interface{}{
 				"rel":      "http://ostatus.org/schema/1.0/subscribe",

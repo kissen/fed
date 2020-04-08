@@ -5,9 +5,9 @@ import (
 	"github.com/gorilla/mux"
 	"gitlab.cs.fau.de/kissen/fed/ap"
 	"gitlab.cs.fau.de/kissen/fed/config"
-	"gitlab.cs.fau.de/kissen/fed/util"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"log"
 	"net/http"
 )
@@ -28,7 +28,7 @@ func OpenDatabase() db.FedStorage {
 	for _, username := range []string{"alice", "bob", "celia"} {
 		user := &db.FedUser{Name: username}
 		user.SetPassword(username)
-		Must(storage.StoreUser(user))
+		util.Must(storage.StoreUser(user))
 	}
 
 	return storage
@@ -132,5 +132,5 @@ func main() {
 
 	addr := "[::]:4040"
 	log.Printf("starting on addr=%v...", addr)
-	Must(http.ListenAndServe(addr, router))
+	util.Must(http.ListenAndServe(addr, router))
 }

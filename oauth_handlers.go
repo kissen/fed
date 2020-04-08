@@ -31,7 +31,7 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	// get login credentials
 
-	username, ok := FormValue(r, "username")
+	username, ok := util.FormValue(r, "username")
 	if !ok {
 		fedcontext.FlashWarning(r, "missing username")
 		fedcontext.Status(r, http.StatusBadRequest)
@@ -40,7 +40,7 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password, ok := FormValue(r, "password")
+	password, ok := util.FormValue(r, "password")
 	if !ok {
 		fedcontext.FlashWarning(r, "missing password")
 		fedcontext.Status(r, http.StatusBadRequest)
