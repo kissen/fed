@@ -6,3 +6,6 @@
    updateActor is racy w/o transactions
 
 -> once poc is completed: serious refactor
+
+-> support running w/o nginx and https; currently we expect al IRIs
+   of our instance to be reachable via https

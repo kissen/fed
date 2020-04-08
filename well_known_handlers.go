@@ -17,7 +17,7 @@ import (
 func GetNodeInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("GetNodeInfo()")
 
-	p := *config.Get().Base
+	p := config.Get().URL()
 	p.Path = path.Join(p.Path, ".well-known", "nodeinfo", "2.0.json")
 
 	href := p.String()
@@ -65,7 +65,7 @@ func GetNodeInfo20(w http.ResponseWriter, r *http.Request) {
 			"invitesEnabled": false,
 			"mailerEnabled":  false,
 			"nodeDescrption": "development instance",
-			"nodeName":       config.Get().Base,
+			"nodeName":       config.Get().Hostname,
 			"private":        false,
 		},
 	}
@@ -102,8 +102,8 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 	username := q[0]
 	hostname := q[1]
 
-	if hostname != configuration.Base.Hostname() {
-		msg := fmt.Sprintf("bad hostname got=%v expected=%v", hostname, configuration.Base.Hostname())
+	if hostname != configuration.Hostname {
+		msg := fmt.Sprintf("bad hostname got=%v expected=%v", hostname, configuration.Hostname)
 		ApiError(w, r, msg, http.StatusBadRequest)
 		return
 	}
@@ -116,11 +116,8 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 	// href is the address of the given actor
 	href := fediri.ActorIRI(username).String()
 
-	// build up the oauth_subscribe address used by a certain hairy
-	// elephant
-	subscribe := *configuration.Base
-	subscribe.Path = path.Join(subscribe.Path, "ostatus_subscribe")
-	subscribeTemplate := fmt.Sprintf("%v?acct={uri}", subscribe.String())
+	// build up the oauth_subscribe address used by a certain hairy elephant
+	subscribe := fmt.Sprintf("https://%v?acct={uri}", configuration.Hostname)
 
 	reply := map[string]interface{}{
 		"subject": fmt.Sprintf("acct:%v@%v", username, hostname),
@@ -145,7 +142,7 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 			},
 			map[string]interface{}{
 				"rel":      "http://ostatus.org/schema/1.0/subscribe",
-				"template": subscribeTemplate,
+				"template": subscribe,
 			},
 		},
 	}
@@ -162,7 +159,7 @@ func GetHostMeta(w http.ResponseWriter, r *http.Request) {
 		`  <Link rel="lrdd" type="application/xrd+xml" template="https://%s/.well-known/webfinger?resource={uri}"/>` + "\n" +
 		`</XRD>` + "\n"
 
-	xml := fmt.Sprintf(format, config.Get().Base.Host)
+	xml := fmt.Sprintf(format, config.Get().Hostname)
 	bs := []byte(xml)
 
 	w.Header().Add("Content-Type", "application/xrd+xml; charset=utf-8")

@@ -19,7 +19,10 @@ import (
 // nothing we can do.
 func OpenDatabase() db.FedStorage {
 	// open db
-	storage := &db.FedEmbeddedStorage{Filepath: config.Get().Store}
+	storage := &db.FedEmbeddedStorage{
+		Filepath: config.Get().StorageFile,
+	}
+
 	if err := storage.Open(); err != nil {
 		log.Fatal(err)
 	}
@@ -119,7 +122,7 @@ func main() {
 	defer storage.Close()
 
 	router := mux.NewRouter().StrictSlash(false)
-	sr := router.PathPrefix(config.Get().Base.Path).Subrouter()
+	sr := router.PathPrefix(config.Get().URL().Path).Subrouter()
 
 	InstallAdminHandlers(sr)
 	InstallOAuthHandlers(sr)

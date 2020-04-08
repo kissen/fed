@@ -1,65 +1,74 @@
 package config
 
 import (
-	"flag"
+	"github.com/BurntSushi/toml"
+	"gitlab.cs.fau.de/kissen/fed/errors"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"sync"
 )
 
 type FedConfig struct {
-	// Base URL under which this instance should be reachable at.
-	Base *url.URL
+	// Hostname under which the instance is reachable in the
+	// open web. Something like "fed.example.com"
+	Hostname string
 
-	// Location of the FedStorage database file.
-	Store string
+	// What address to listen on. Something like "localhost:8080"
+	// if you are using a reverse proxy like nginx.
+	ListenAddress string
+
+	// Location of the storage file. The process running fed
+	// will need rw permissions on that file and the directory
+	// it is in.
+	StorageFile string
 }
 
-var cache struct {
-	config *FedConfig
-	lock   sync.Mutex
-}
+// Pointer to the singelton instance of the global config.
+var singleton *FedConfig
+var once sync.Once
 
+// Return the singleton instance of the configuration.
 func Get() *FedConfig {
-	// only initialize once
+	once.Do(fillInSingleton)
+	return singleton
+}
 
-	cache.lock.Lock()
-	defer cache.lock.Unlock()
+// Return the Hostname property as a newly created URL.
+func (fc *FedConfig) URL() *url.URL {
+	if u, err := url.Parse(fc.Hostname); err != nil {
+		log.Fatal("bad Hostname in configuration:", err)
+		return nil // never reached
+	} else {
+		u.Scheme = "https"
+		return u
+	}
+}
 
-	// create if necessary
+// Fill in the singleton global or stop the program on failure.
+func fillInSingleton() {
+	filename := "fed.conf"
 
-	if cache.config == nil {
-		// read in args
+	if c, err := loadConfigFrom(filename); err != nil {
+		log.Println(err)
+		log.Fatal("cannot start without configuration file")
+	} else {
+		singleton = c
+	}
+}
 
-		bptr := flag.String("base", "", "base address")
-		sptr := flag.String("store", "", "storage file location")
+// Try to open and parse configuration file at filename.
+func loadConfigFrom(filename string) (*FedConfig, error) {
+	var c FedConfig
 
-		flag.Parse()
-
-		// evaluate what we got
-
-		if bptr == nil || len(*bptr) == 0 {
-			log.Fatal("missing -base argument")
-		}
-
-		if sptr == nil || len(*sptr) == 0 {
-			log.Fatal("missing -store argument")
-		}
-
-		burl, err := url.Parse(*bptr)
-		if err != nil {
-			log.Fatal("bad -base argument:", err)
-		}
-
-		// return the struct
-
-		cache.config = &FedConfig{
-			Base:  burl,
-			Store: *sptr,
-		}
+	bs, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load config file")
 	}
 
-	// return config
+	if err := toml.Unmarshal(bs, &c); err != nil {
+		return nil, errors.Wrapf(err, `filename="%v" not a valid config file`, filename)
+	}
 
-	return cache.config
+	return &c, nil
 }
