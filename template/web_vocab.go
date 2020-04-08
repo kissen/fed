@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"gitlab.cs.fau.de/kissen/fed/prop"
 	"golang.org/x/sync/errgroup"
@@ -36,17 +37,18 @@ type webVocab struct {
 	target   vocab.Type
 	mappings map[string]interface{}
 	fragment template.HTML
+	fc       *fedcontext.FedContext
 }
 
 // Return a wrapped version of target.
-func New(target vocab.Type) (WebVocab, error) {
-	return wrap(target)
+func New(fc *fedcontext.FedContext, target vocab.Type) (WebVocab, error) {
+	return wrap(fc, target)
 }
 
 // Return wrapped versions of all targets. Returns an error
 // if at least one of the conversations failed.
-func News(targets ...vocab.Type) ([]WebVocab, error) {
-	if ws, err := wraps(targets...); err != nil {
+func News(fc *fedcontext.FedContext, targets ...vocab.Type) ([]WebVocab, error) {
+	if ws, err := wraps(fc, targets...); err != nil {
 		return nil, err
 	} else {
 		wvs := make([]WebVocab, len(ws))
@@ -59,7 +61,7 @@ func News(targets ...vocab.Type) ([]WebVocab, error) {
 
 // Wrap target into a webVocab. This involves dereferencing
 // target if it's just an IRI.
-func wrap(target vocab.Type) (*webVocab, error) {
+func wrap(fc *fedcontext.FedContext, target vocab.Type) (*webVocab, error) {
 	// do not allow nil arguments
 	if target == nil {
 		return nil, errors.New("target is nil")
@@ -77,6 +79,7 @@ func wrap(target vocab.Type) (*webVocab, error) {
 	wocab := &webVocab{
 		target:   target,
 		mappings: mappings,
+		fc:       fc,
 	}
 
 	// pick the right template
@@ -115,7 +118,7 @@ func wrap(target vocab.Type) (*webVocab, error) {
 
 // Wrap all targets into webVocabs. Returns an error if at least
 // one of the conversations failed.
-func wraps(targets ...vocab.Type) ([]*webVocab, error) {
+func wraps(fc *fedcontext.FedContext, targets ...vocab.Type) ([]*webVocab, error) {
 	group := &errgroup.Group{}
 	ws := make([]*webVocab, len(targets))
 
@@ -123,7 +126,7 @@ func wraps(targets ...vocab.Type) ([]*webVocab, error) {
 		myi, mytarget := i, target
 
 		group.Go(func() error {
-			if w, err := wrap(mytarget); err != nil {
+			if w, err := wrap(fc, mytarget); err != nil {
 				return err
 			} else {
 				ws[myi] = w
@@ -136,7 +139,7 @@ func wraps(targets ...vocab.Type) ([]*webVocab, error) {
 }
 
 // Fetch the ActivityPub object at iri and return a wraped version.
-func Fetch(target *url.URL) (WebVocab, error) {
+func Fetch(fc *fedcontext.FedContext, target *url.URL) (WebVocab, error) {
 	// do not allow nil arguments
 
 	if target == nil {
@@ -152,7 +155,7 @@ func Fetch(target *url.URL) (WebVocab, error) {
 
 	// now that we have the object, wrap it like normal
 
-	wocab, err := New(obj)
+	wocab, err := New(fc, obj)
 	if err != nil {
 		return nil, errors.Wrap(err, "derference ok, but wrapping failed")
 	}
@@ -222,6 +225,12 @@ func (v *webVocab) XChildren() []*webVocab {
 	} else {
 		return cs
 	}
+}
+
+// Returns whether the currently logged in user has liked this
+// item.
+func (v *webVocab) XLiked() bool {
+	return false
 }
 
 func (v *webVocab) XObject() []*webVocab {
@@ -363,5 +372,5 @@ func (v *webVocab) wrapAll(property interface{}) ([]*webVocab, error) {
 		return nil, errors.Wrap(err, "cannot fetch from collection")
 	}
 
-	return wraps(vs...)
+	return wraps(v.fc, vs...)
 }

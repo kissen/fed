@@ -1,6 +1,7 @@
 package template
 
 import (
+	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"gitlab.cs.fau.de/kissen/fed/fetch"
 	"net/http"
 )
@@ -17,7 +18,8 @@ func Iter(w http.ResponseWriter, r *http.Request, it fetch.Iter) {
 
 	// wrap objects
 
-	wrapped, err := News(vs...)
+	fc := fedcontext.Context(r)
+	wrapped, err := News(fc, vs...)
 	if err != nil {
 		Error(w, r, http.StatusBadGateway, err, nil)
 		return

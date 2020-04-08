@@ -10,7 +10,8 @@ import (
 func Remote(w http.ResponseWriter, r *http.Request, iri *url.URL) {
 	// fetch and wrap object
 
-	wrapped, err := Fetch(iri)
+	fc := fedcontext.Context(r)
+	wrapped, err := Fetch(fc, iri)
 	if err != nil {
 		Error(w, r, http.StatusBadGateway, err, nil)
 		return
