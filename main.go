@@ -80,7 +80,7 @@ func InstallWellKnownHandlers(router *mux.Router) {
 // Install handlers that are really just workaround and redirects
 // to deal with other software on the fediverse.
 func InstallShimHandlers(router *mux.Router) {
-	router.HandleFunc("/ostatus_subscribe", GetOStatusSubscribe).Methods("GET")
+	router.HandleFunc("/shim/ostatus_subscribe", GetOStatusSubscribe).Methods("GET")
 }
 
 // Install the handlers that take care of handling requests to Activity

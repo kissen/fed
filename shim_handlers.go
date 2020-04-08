@@ -7,12 +7,12 @@ import (
 	"path"
 )
 
-// GET /ostatus_subscribe?acct={uri}
+// GET /shim/ostatus_subscribe?acct={uri}
 //
 // A certain elephant is doing weird things; see
 // https://git.pleroma.social/pleroma/pleroma/issues/286
 func GetOStatusSubscribe(w http.ResponseWriter, r *http.Request) {
-	log.Println("GetOstatusSubscribe()")
+	log.Println("GetOStatusSubscribe()")
 
 	acct, ok := util.FormValue(r, "acct")
 	if !ok {

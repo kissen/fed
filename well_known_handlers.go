@@ -118,7 +118,7 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 
 	// build up the oauth_subscribe address used by a certain hairy elephant
 	subscribe := configuration.GlobalURL()
-	subscribe.Path = path.Join(subscribe.Path, "ostatus_subscribe")
+	subscribe.Path = path.Join(subscribe.Path, "shim", "ostatus_subscribe")
 	subscribe.RawQuery = "acct={uri}"
 
 	reply := map[string]interface{}{
