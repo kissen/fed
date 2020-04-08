@@ -89,6 +89,7 @@ func InstallApHandlers(router *mux.Router) {
 	InstallApHandler(router, ApGetPostOutbox, "/{username:[A-Za-z]+}/outbox")
 	InstallApHandler(router, ApGetPostInbox, "/{username:[A-Za-z]+}/inbox")
 
+	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}") // actor endpoint
 	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}/following")
 	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}/followers")
 	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}/liked")
@@ -122,18 +123,17 @@ func main() {
 	defer storage.Close()
 
 	router := mux.NewRouter().StrictSlash(false)
-	sr := router.PathPrefix(config.Get().URL().Path).Subrouter()
 
-	InstallAdminHandlers(sr)
-	InstallOAuthHandlers(sr)
-	InstallWellKnownHandlers(sr)
-	InstallShimHandlers(sr)
-	InstallApHandlers(sr) // includes catchall
+	InstallAdminHandlers(router)
+	InstallOAuthHandlers(router)
+	InstallWellKnownHandlers(router)
+	InstallShimHandlers(router)
+	InstallApHandlers(router)
 
 	InstallErrorHandlers(router)
 	InstallMiddleware(storage, router)
 
-	addr := "[::]:4040"
-	log.Printf("starting on addr=%v...", addr)
+	addr := config.Get().ListenAddress
+	log.Printf("listening on addr=%v...", addr)
 	util.Must(http.ListenAndServe(addr, router))
 }

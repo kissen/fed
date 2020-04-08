@@ -17,7 +17,7 @@ import (
 func GetNodeInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("GetNodeInfo()")
 
-	p := config.Get().URL()
+	p := config.Get().GlobalURL()
 	p.Path = path.Join(p.Path, ".well-known", "nodeinfo", "2.0.json")
 
 	href := p.String()
@@ -117,7 +117,9 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 	href := fediri.ActorIRI(username).String()
 
 	// build up the oauth_subscribe address used by a certain hairy elephant
-	subscribe := fmt.Sprintf("https://%v?acct={uri}", configuration.Hostname)
+	subscribe := configuration.GlobalURL()
+	subscribe.Path = path.Join(subscribe.Path, "ostatus_subscribe")
+	subscribe.RawQuery = "acct={uri}"
 
 	reply := map[string]interface{}{
 		"subject": fmt.Sprintf("acct:%v@%v", username, hostname),
@@ -142,7 +144,7 @@ func GetWebfinger(w http.ResponseWriter, r *http.Request) {
 			},
 			map[string]interface{}{
 				"rel":      "http://ostatus.org/schema/1.0/subscribe",
-				"template": subscribe,
+				"template": subscribe.String(),
 			},
 		},
 	}

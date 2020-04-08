@@ -34,20 +34,19 @@ func Get() *FedConfig {
 	return singleton
 }
 
-// Return the Hostname property as a newly created URL.
-func (fc *FedConfig) URL() *url.URL {
-	if u, err := url.Parse(fc.Hostname); err != nil {
-		log.Fatal("bad Hostname in configuration:", err)
-		return nil // never reached
-	} else {
-		u.Scheme = "https"
-		return u
+// Return the Hostname property as a newly created URL. This is the
+// base URL under which the instance should be reachable on the open
+// internet.
+func (fc *FedConfig) GlobalURL() *url.URL {
+	return &url.URL{
+		Scheme: "https",
+		Host:   fc.Hostname,
 	}
 }
 
 // Fill in the singleton global or stop the program on failure.
 func fillInSingleton() {
-	filename := "fed.conf"
+	filename := "doc/fed.conf"
 
 	if c, err := loadConfigFrom(filename); err != nil {
 		log.Println(err)

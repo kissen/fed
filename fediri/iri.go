@@ -15,13 +15,13 @@ type IRI struct {
 
 // Construct a new IRI with tailing components.
 func NewIRI(components ...string) IRI {
-	hostname := config.Get().Hostname
-	payload := path.Join(hostname, path.Join(components...))
+	u := config.Get().GlobalURL()
+	u.Path = path.Join(u.Path, path.Join(components...))
 
 	target := &url.URL{
 		Scheme: "https",
-		Host:   hostname,
-		Path:   payload,
+		Host:   u.Host,
+		Path:   u.Path,
 	}
 
 	return IRI{target}
@@ -172,7 +172,7 @@ func (iri IRI) split() (username *string, payload *string, err error) {
 	// subdirectory on a server, e.g. example.com/foo/bar/;
 	// this is currently not supported; patches welcome :-)
 
-	basePath := config.Get().Hostname
+	basePath := config.Get().GlobalURL().Path
 
 	// split up base path and target into path components for easier
 	// handling

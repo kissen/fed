@@ -19,10 +19,6 @@ func ApiError(w http.ResponseWriter, r *http.Request, cause interface{}, status 
 
 	var causestr string
 
-	if cause == nil {
-		log.Fatal("unexpected: called ApiError with cause=nil")
-	}
-
 	if s, ok := cause.(string); ok {
 		causestr = s
 	}
@@ -44,9 +40,12 @@ func ApiError(w http.ResponseWriter, r *http.Request, cause interface{}, status 
 	// build up reply
 
 	reply := map[string]interface{}{
-		"cause":       causestr,
 		"description": http.StatusText(status),
 		"status":      status,
+	}
+
+	if causestr != "" {
+		reply["cause"] = causestr
 	}
 
 	bs, err := json.Marshal(&reply)
