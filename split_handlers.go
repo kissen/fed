@@ -95,7 +95,7 @@ func ApGetStorage(w http.ResponseWriter, r *http.Request) {
 	if IsActivityPubRequest(r) {
 		ApGetPostActivity(w, r)
 	} else {
-		Error(w, r, http.StatusNotImplemented)
+		DoError(w, r, nil, http.StatusNotImplemented)
 	}
 }
 

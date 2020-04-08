@@ -2,36 +2,41 @@ package main
 
 import (
 	"gitlab.cs.fau.de/kissen/fed/template"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"net/http"
 )
 
 // HTTP handler that handles a not found error.
 func NotFound(w http.ResponseWriter, r *http.Request) {
-	Error(w, r, http.StatusNotFound)
+	DoError(w, r, nil, http.StatusNotFound)
 }
 
 // HTTP handler that handles a method not allowed error.
 func MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
-	Error(w, r, http.StatusMethodNotAllowed)
+	DoError(w, r, nil, http.StatusMethodNotAllowed)
 }
 
 // Return an HTTP error that indicates that the type was wrong.
 func WrongContentType(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		Error(w, r, http.StatusNotAcceptable)
+		DoError(w, r, nil, http.StatusNotAcceptable)
 	case "POST":
 		fallthrough
 	case "PUT":
-		Error(w, r, http.StatusUnsupportedMediaType)
+		DoError(w, r, nil, http.StatusUnsupportedMediaType)
 	}
 }
 
-// HTTP handler that handles error with code status.
-func Error(w http.ResponseWriter, r *http.Request, status int) {
-	if IsHTMLRequest(r) {
+func DoError(w http.ResponseWriter, r *http.Request, cause interface{}, status int) {
+	ct := util.ContentType(r)
+
+	switch ct {
+	case util.HTML_TYPE:
 		template.Error(w, r, status, nil, nil)
-	} else {
-		ApiError(w, r, "routing error", status)
+	case util.AP_TYPE:
+		fallthrough
+	default:
+		ApiError(w, r, cause, status)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"gitlab.cs.fau.de/kissen/fed/ap"
 	"gitlab.cs.fau.de/kissen/fed/config"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"gitlab.cs.fau.de/kissen/fed/db"
 	"gitlab.cs.fau.de/kissen/fed/fedcontext"
 	"log"
@@ -63,7 +64,9 @@ func InstallOAuthHandlers(router *mux.Router) {
 	router.HandleFunc("/oauth/token", PostOAuthToken).Methods("POST")
 }
 
-// Install the handlers for all /.well-known services.
+// Install the handlers for all /.well-known/ targets. These are used by
+// other software on the fediverse to look up stuff about actors on our
+// instance.
 func InstallWellKnownHandlers(router *mux.Router) {
 	router.HandleFunc("/.well-known/nodeinfo", GetNodeInfo).Methods("GET")
 	router.HandleFunc("/.well-known/nodeinfo/2.0.json", GetNodeInfo20).Methods("GET")
@@ -72,38 +75,28 @@ func InstallWellKnownHandlers(router *mux.Router) {
 }
 
 // Install handlers that are really just workaround and redirects
-// to deal with weirdness on the fediverse.
+// to deal with other software on the fediverse.
 func InstallShimHandlers(router *mux.Router) {
 	router.HandleFunc("/ostatus_subscribe", GetOStatusSubscribe).Methods("GET")
 }
 
-// Install the actually interesting handlers. These handlers will differentiate
-// between Content-Type/Accept headers and either send out JSON for ActivityPub
-// or a gaudy web interface instead.
-func InstallSplitHandlers(router *mux.Router) {
-	// this is kind of a mess
-	router.HandleFunc("/{username:[A-Za-z]+}/outbox", GetPostOutbox).Methods("GET", "POST")
-	router.HandleFunc("/{username:[A-Za-z]+}/inbox", GetPostInbox).Methods("GET", "POST")
-	router.HandleFunc("/", GetIndex).Methods("GET")
-	router.HandleFunc("/stream", WebGetStream).Methods("GET")
-	router.HandleFunc("/liked", GetLiked).Methods("GET")
-	router.HandleFunc("/following", GetFollowing).Methods("GET")
-	router.HandleFunc("/followers", GetFollowers).Methods("GET")
-	router.HandleFunc("/login", GetLogin).Methods("GET")
-	router.HandleFunc("/login", PostLogin).Methods("POST")
-	router.HandleFunc("/logout", PostLogout).Methods("POST")
-	router.HandleFunc("/remote/{remotepath:.+}", GetRemote).Methods("GET")
-	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
-	router.HandleFunc("/submit", PostSubmit).Methods("POST")
-	router.HandleFunc("/reply", PostReply).Methods("POST")
-	router.HandleFunc("/repeat", PostRepeat).Methods("POST")
-	router.HandleFunc("/like", PostLike).Methods("POST")
+// Install the handlers that take care of handling requests to Activity
+// Pub endpoints.
+func InstallApHandlers(router *mux.Router) {
+	InstallApHandler(router, ApGetPostOutbox, "/{username:[A-Za-z]+}/outbox")
+	InstallApHandler(router, ApGetPostInbox, "/{username:[A-Za-z]+}/inbox")
 
-	// catchall for activity pub
-	//
-	// TODO: remove this; in general, be more specific and get rid of that
-	// stupid file split_handlers.go!
-	router.PathPrefix("/").HandlerFunc(ApGetPostActivity).Methods("GET", "POST")
+	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}/following")
+	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}/followers")
+	InstallApHandler(router, ApGetPostActivity, "/{username:[A-Za-z]+}/liked")
+	InstallApHandler(router, ApGetPostActivity, "/storage/{uuid:.+}")
+}
+
+// Install activity pub handler h for pattern. This function takes care of
+// registering the handler with the correct method and Accept/Content-Type header.
+func InstallApHandler(target *mux.Router, h http.HandlerFunc, pattern string) {
+	target.HandleFunc(pattern, h).Methods("GET").Headers("Accept", util.AP_TYPE)
+	target.HandleFunc(pattern, h).Methods("POST").Headers("Content-Type", util.AP_TYPE)
 }
 
 // Install the different error handler. While the defaults from gorilla are
@@ -132,7 +125,7 @@ func main() {
 	InstallOAuthHandlers(sr)
 	InstallWellKnownHandlers(sr)
 	InstallShimHandlers(sr)
-	InstallSplitHandlers(sr) // includes catchall
+	InstallApHandlers(sr) // includes catchall
 
 	InstallErrorHandlers(router)
 	InstallMiddleware(storage, router)

@@ -52,7 +52,7 @@ func ApGetPostActivity(w http.ResponseWriter, r *http.Request) {
 }
 
 func ApGetRemote(w http.ResponseWriter, r *http.Request) {
-	Error(w, r, http.StatusNotImplemented)
+	DoError(w, r, nil, http.StatusNotImplemented)
 }
 
 // Try to handle the given HTTP request for an outbox with go-fed.
