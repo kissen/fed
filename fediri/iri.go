@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"gitlab.cs.fau.de/kissen/fed/config"
+	"gitlab.cs.fau.de/kissen/fed/errors"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -142,7 +144,7 @@ func (iri IRI) Owner() (string, error) {
 	if username, _, err := iri.split(); err != nil {
 		return "", err
 	} else if IsReservedUsername(*username) {
-		return "", fmt.Errorf("reserved username=%v", *username)
+		return "", errors.NewfWith(http.StatusNotFound, "reserved username=%v", *username)
 	} else {
 		return *username, nil
 	}
