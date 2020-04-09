@@ -17,12 +17,9 @@ func ApGetPostOutbox(w http.ResponseWriter, r *http.Request) {
 
 	if done, err := HandleOutboxWithPubActor(w, r); err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
-		return
-	} else if done {
-		return
+	} else if !done {
+		ApiError(w, r, "bad route", http.StatusInternalServerError)
 	}
-
-	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", http.StatusNotAcceptable)
 }
 
 func ApGetPostInbox(w http.ResponseWriter, r *http.Request) {
@@ -30,12 +27,9 @@ func ApGetPostInbox(w http.ResponseWriter, r *http.Request) {
 
 	if done, err := HandleInboxWithPubActor(w, r); err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
-		return
-	} else if done {
-		return
+	} else if !done {
+		ApiError(w, r, "bad route", http.StatusInternalServerError)
 	}
-
-	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", http.StatusNotAcceptable)
 }
 
 func ApGetPostActivity(w http.ResponseWriter, r *http.Request) {
@@ -43,12 +37,9 @@ func ApGetPostActivity(w http.ResponseWriter, r *http.Request) {
 
 	if done, err := HandleWithHandleFunc(w, r); err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
-		return
-	} else if done {
-		return
+	} else if !done {
+		ApiError(w, r, "bad route", http.StatusInternalServerError)
 	}
-
-	ApiError(w, r, "check https://www.w3.org/TR/activitypub/#retrieving-objects", http.StatusNotAcceptable)
 }
 
 func ApGetRemote(w http.ResponseWriter, r *http.Request) {

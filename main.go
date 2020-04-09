@@ -112,6 +112,11 @@ func InstallErrorHandlers(router *mux.Router) {
 
 // Install middleware that runs before every single actual HTTP handler.
 func InstallMiddleware(storage db.FedStorage, router *mux.Router) {
+	// middleware that signs all responses
+	router.Use(SignResponseMiddleware)
+
+	// middleware that installs a FedContext on all requests;
+	// it's nicer than dealing with global variables
 	pa, hf := CreateProxies()
 	router.Use(fedcontext.AddContext(storage, pa, hf))
 }
