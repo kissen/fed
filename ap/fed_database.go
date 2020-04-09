@@ -262,8 +262,6 @@ func (f *FedDatabase) Update(c context.Context, asType vocab.Type) error {
 	id := prop.Id(asType)
 	iri := fediri.IRI{id}
 
-	log.Printf("\n\nid=%v\n\n", id)
-
 	// try out collections
 
 	if _, err := iri.InboxOwner(); err == nil {
@@ -451,8 +449,6 @@ func (f *FedDatabase) getStorage(c context.Context, addr *url.URL) (vocab.Type, 
 }
 
 func (f *FedDatabase) updateLiked(c context.Context, actoriri fediri.IRI, liked vocab.ActivityStreamsCollection) error {
-	// XXX: racy: need transactions
-
 	storage := fedcontext.From(c).Storage
 
 	username, err := actoriri.LikedOwner()
@@ -460,7 +456,14 @@ func (f *FedDatabase) updateLiked(c context.Context, actoriri fediri.IRI, liked 
 		return err
 	}
 
-	user, err := storage.RetrieveUser(username)
+	tx, err := storage.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	user, err := tx.RetrieveUser(username)
 	if err != nil {
 		return err
 	}
@@ -470,7 +473,11 @@ func (f *FedDatabase) updateLiked(c context.Context, actoriri fediri.IRI, liked 
 		return errors.Wrap(err, "bad liked collection")
 	}
 
-	return storage.StoreUser(user)
+	if err = tx.StoreUser(user); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // Update actor which should represent a user on our instance. In particular, update
@@ -485,7 +492,14 @@ func (f *FedDatabase) updatePerson(c context.Context, actoriri fediri.IRI, actor
 		return err
 	}
 
-	user, err := storage.RetrieveUser(username)
+	tx, err := storage.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	user, err := tx.RetrieveUser(username)
 	if err != nil {
 		return err
 	}
@@ -508,14 +522,11 @@ func (f *FedDatabase) updatePerson(c context.Context, actoriri fediri.IRI, actor
 		return errors.Wrap(err, "bad liked collection")
 	}
 
-	// update
-	// XXX: racy; use transactions here (see also /NEXTUP.md)
-
-	if err := storage.StoreUser(user); err != nil {
+	if err := tx.StoreUser(user); err != nil {
 		return errors.Wrap(err, "overwriting user failed")
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 // Ensure that all objects in collection are part of our storage. Returns a
