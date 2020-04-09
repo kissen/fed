@@ -34,4 +34,3 @@ func (sw *StatusHTTPWriter) Status() int {
 		return sw.status
 	}
 }
-

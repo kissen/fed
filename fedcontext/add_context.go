@@ -39,15 +39,10 @@ func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) fun
 				r = r.WithContext(c)
 
 				// set default values
+				fc.Storage = s
 				fc.PubActor = pa
 				fc.PubHandler = hf
 				fc.Status = http.StatusOK
-
-				// start database tx
-				if fc.Storage, err = s.Begin(); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
 
 				// try to load contents from cookie if there is one;
 				// fills out the CookieContext fields
@@ -63,22 +58,6 @@ func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) fun
 			// handle the request; this is the core of the application
 
 			next.ServeHTTP(w, r)
-
-			// if the request was successful, commit the changes to the database;
-			// on eror, we discard all changes with a rollback
-
-			var err error
-			var tx db.Tx = Context(r).Storage
-
-			if util.IsHTTPSuccess(w.Status()) {
-				err = tx.Commit()
-			} else {
-				err = tx.Rollback()
-			}
-
-			if err != nil {
-				log.Println(err)
-			}
 		})
 	}
 }
@@ -117,10 +96,12 @@ func setClientFromBasiAuth(fc *FedContext, from *http.Request) (authed bool) {
 
 	tm, err := db.NewFedOAuthToken(username, password, fc.Storage)
 	if err != nil {
+		log.Println(err)
 		return false
 	}
 
-	if !setClientFromToken(fc, tm.Token) {
+	if authed := setClientFromToken(fc, tm.Token); !authed {
+		log.Println("NOT")
 		return false
 	}
 

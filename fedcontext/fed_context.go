@@ -33,7 +33,7 @@ type FedContext struct {
 type RequestContext struct {
 	// The connection to the database you can use to read and write
 	// metadata and activity pub objects.
-	Storage db.Tx
+	Storage db.FedStorage
 
 	// The federating actor from the go-fed library. You can use it
 	// to take care of activity pub requests to inbox and outbox.

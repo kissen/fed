@@ -40,6 +40,12 @@ type fedembeddedtx struct {
 	// instead call view or update
 	btx           *bbolt.Tx
 	haveWriteLock bool
+
+	// Whether Commit or Rollback has been called before.
+	commited bool
+
+	// The error returned by the first call to Commit or Rollback.
+	commitedError error
 }
 
 func (fs *FedEmbeddedStorage) Open() (err error) {
@@ -115,6 +121,105 @@ func (fs *FedEmbeddedStorage) Begin() (Tx, error) {
 	}
 
 	return tx, nil
+}
+
+func (fs *FedEmbeddedStorage) RetrieveUser(username string) (user *FedUser, err error) {
+	if tx, err := fs.Begin(); err != nil {
+		return nil, err
+	} else if user, err := tx.RetrieveUser(username); err != nil {
+		tx.Commit()
+		return nil, err
+	} else {
+		return user, tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) StoreUser(user *FedUser) error {
+	if tx, err := fs.Begin(); err != nil {
+		return err
+	} else if err := tx.StoreUser(user); err != nil {
+		tx.Commit()
+		return err
+	} else {
+		return tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) RetrieveCode(code string) (*FedOAuthCode, error) {
+	if tx, err := fs.Begin(); err != nil {
+		return nil, err
+	} else if oc, err := tx.RetrieveCode(code); err != nil {
+		tx.Commit()
+		return nil, err
+	} else {
+		return oc, tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) StoreCode(code *FedOAuthCode) error {
+	if tx, err := fs.Begin(); err != nil {
+		return err
+	} else if err := tx.StoreCode(code); err != nil {
+		tx.Commit()
+		return err
+	} else {
+		return tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) RetrieveToken(token string) (*FedOAuthToken, error) {
+	if tx, err := fs.Begin(); err != nil {
+		return nil, err
+	} else if ot, err := tx.RetrieveToken(token); err != nil {
+		tx.Commit()
+		return nil, err
+	} else {
+		return ot, tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) StoreToken(token *FedOAuthToken) error {
+	if tx, err := fs.Begin(); err != nil {
+		return err
+	} else if err := tx.StoreToken(token); err != nil {
+		tx.Commit()
+		return err
+	} else {
+		return tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) RetrieveObject(iri *url.URL) (obj vocab.Type, err error) {
+	if tx, err := fs.Begin(); err != nil {
+		return nil, err
+	} else if obj, err := tx.RetrieveObject(iri); err != nil {
+		tx.Commit()
+		return nil, err
+	} else {
+		return obj, tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) StoreObject(iri *url.URL, obj vocab.Type) error {
+	if tx, err := fs.Begin(); err != nil {
+		return err
+	} else if err := tx.StoreObject(iri, obj); err != nil {
+		tx.Commit()
+		return err
+	} else {
+		return tx.Commit()
+	}
+}
+
+func (fs *FedEmbeddedStorage) DeleteObject(iri *url.URL) error {
+	if tx, err := fs.Begin(); err != nil {
+		return err
+	} else if err := tx.DeleteObject(iri); err != nil {
+		tx.Commit()
+		return err
+	} else {
+		return tx.Commit()
+	}
 }
 
 // Keep garbage collecting the database.
@@ -221,30 +326,52 @@ func (fs *FedEmbeddedStorage) gcBucket(tx *fedembeddedtx, bucket []byte) (err er
 	})
 }
 
-func (fs *fedembeddedtx) Commit() error {
+func (fs *fedembeddedtx) Commit() (err error) {
 	log.Println("Commit()")
 
-	if fs.haveWriteLock {
-		fs.parent.rwlock.RUnlock()
-		fs.parent.rwlock.Unlock()
-		return fs.btx.Commit()
-	} else {
-		fs.parent.rwlock.RUnlock()
-		return fs.btx.Rollback()
+	if !fs.commited {
+		if fs.haveWriteLock {
+			fs.parent.rwlock.RUnlock()
+			fs.parent.rwlock.Unlock()
+			err = fs.btx.Commit()
+		} else {
+			fs.parent.rwlock.RUnlock()
+			err = fs.btx.Rollback()
+		}
+
+		fs.commited = true
+
+		if err != nil {
+			fs.commitedError = errors.Wrap(err, "previous Commit failed")
+		}
+
+		return err
 	}
+
+	return fs.commitedError
 }
 
-func (fs *fedembeddedtx) Rollback() error {
+func (fs *fedembeddedtx) Rollback() (err error) {
 	log.Println("Rollback()")
 
-	if fs.haveWriteLock {
-		fs.parent.rwlock.RUnlock()
-		fs.parent.rwlock.Unlock()
-		return fs.btx.Rollback()
-	} else {
-		fs.parent.rwlock.RUnlock()
-		return fs.btx.Rollback()
+	if !fs.commited {
+		if fs.haveWriteLock {
+			fs.parent.rwlock.RUnlock()
+			fs.parent.rwlock.Unlock()
+			err = fs.btx.Rollback()
+		} else {
+			fs.parent.rwlock.RUnlock()
+			err = fs.btx.Rollback()
+		}
+
+		fs.commited = true
+
+		if err != nil {
+			fs.commitedError = errors.Wrap(err, "previous Rollback failed")
+		}
 	}
+
+	return fs.commitedError
 }
 
 func (fs *fedembeddedtx) RetrieveUser(username string) (user *FedUser, err error) {

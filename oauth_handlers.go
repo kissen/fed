@@ -51,7 +51,8 @@ func PostOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	// generate a code
 
-	code, err := db.NewFedOAuthCode(username, password, fedcontext.Context(r).Storage)
+	storage := fedcontext.Context(r).Storage
+	code, err := db.NewFedOAuthCode(username, password, storage)
 	if err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
 		return
@@ -115,7 +116,8 @@ func PostOAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	// create token
 
-	tokenmeta, err := db.NewFedOAuthTokenFor(cm.Username, fedcontext.Context(r).Storage)
+	storage := fedcontext.Context(r).Storage
+	tokenmeta, err := db.NewFedOAuthTokenFor(cm.Username, storage)
 	if err != nil {
 		ApiError(w, r, err, http.StatusInternalServerError)
 		return
