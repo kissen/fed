@@ -7,7 +7,7 @@ import (
 // Check credentials in storage s. If they are valid credentials,
 // this function returns nil. Otherwise it returns an error telling
 // you what's wrong with the credentials.
-func CheckCredentials(username, password string, s FedStorage) error {
+func CheckCredentials(username, password string, s Tx) error {
 	user, err := s.RetrieveUser(username)
 	if err != nil {
 		return errors.Wrap(err, "bad username")

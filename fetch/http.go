@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"gitlab.cs.fau.de/kissen/fed/errors"
+	"gitlab.cs.fau.de/kissen/fed/util"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -89,7 +90,7 @@ func Post(body []byte, iri *url.URL) (err error) {
 
 	// evaluate result
 
-	if !successful(resp.StatusCode) {
+	if !util.IsHTTPSuccess(resp.StatusCode) {
 		// read error body if there is one
 
 		body := ""
@@ -139,10 +140,4 @@ func setActivityPubHeaders(req *http.Request) {
 	}
 
 	req.Header.Set("User-Agent", "fed/0.x")
-}
-
-// Returns whether status represents a "successful" response, i.e.
-// whether status is in the range [200,299].
-func successful(status int) bool {
-	return status >= 200 && status <= 299
 }

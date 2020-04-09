@@ -74,15 +74,31 @@ func TestUserBucket(t *testing.T) {
 			Followers: followers,
 		}
 
-		if err := storage.StoreUser(&user); err != nil {
+		tx, err := storage.Begin()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := tx.StoreUser(&user); err != nil {
 			t.Fatalf("storing new user failed err=%v", err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			t.Fatal(err)
 		}
 	}
 
 	// get user
 
 	{
-		user, err := storage.RetrieveUser("alice")
+		tx, err := storage.Begin()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		user, err := tx.RetrieveUser("alice")
 
 		if err != nil {
 			t.Fatalf("retrieving previously added user failed err=%v", err)
@@ -109,6 +125,10 @@ func TestUserBucket(t *testing.T) {
 			if followerOrig != followerDeserialized {
 				t.Errorf("bad follower expected=%v got=%v", followerOrig, followerDeserialized)
 			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			t.Fatal(err)
 		}
 	}
 
@@ -151,8 +171,18 @@ func TestStoreAndRetrieveNote(t *testing.T) {
 	iri := toUrl(t, "https://example.com/poetry/emily/july")
 	note := testNote(t)
 
-	if err := storage.StoreObject(iri, note); err != nil {
+	tx, err := storage.Begin()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := tx.StoreObject(iri, note); err != nil {
 		t.Errorf("refusing to store object err=%v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
 	}
 
 	// close db
@@ -172,10 +202,20 @@ func TestStoreAndRetrieveNote(t *testing.T) {
 	var parsed vocab.ActivityStreamsNote
 	var ok bool
 
-	if obj, err := storage.RetrieveObject(iri); err != nil {
+	tx, err = storage.Begin()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if obj, err := tx.RetrieveObject(iri); err != nil {
 		t.Fatalf("getting previously added note failed err=%v", err)
 	} else if parsed, ok = obj.(vocab.ActivityStreamsNote); !ok {
 		t.Fatalf("retrieved type does not match stored type obj=%v TypeName=", obj)
+	}
+
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
 	}
 
 	origName := prop.Name(note)

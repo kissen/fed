@@ -15,8 +15,20 @@ import (
 // context.
 func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(hw http.ResponseWriter, r *http.Request) {
 			log.Println("AddContext()")
+
+			// we want to take a look at the resulting status later;
+			// because of this we wrap the response writer in a util
+			// struct that records the http status
+
+			w := &util.StatusHTTPWriter{
+				Target: hw,
+			}
+
+			// install the FedContext if necessary; this involves setting
+			// default values, starting a database transaction for the request,
+			// loading information from cookies and more
 
 			if r.Context().Value(_REQUEST_CONTEXT_KEY) == nil {
 				var err error
@@ -27,10 +39,15 @@ func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) fun
 				r = r.WithContext(c)
 
 				// set default values
-				fc.Storage = s
 				fc.PubActor = pa
 				fc.PubHandler = hf
 				fc.Status = http.StatusOK
+
+				// start database tx
+				if fc.Storage, err = s.Begin(); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 
 				// try to load contents from cookie if there is one;
 				// fills out the CookieContext fields
@@ -43,7 +60,25 @@ func AddContext(s db.FedStorage, pa pub.FederatingActor, hf pub.HandlerFunc) fun
 				setClientOn(fc, r)
 			}
 
+			// handle the request; this is the core of the application
+
 			next.ServeHTTP(w, r)
+
+			// if the request was successful, commit the changes to the database;
+			// on eror, we discard all changes with a rollback
+
+			var err error
+			var tx db.Tx = Context(r).Storage
+
+			if util.IsHTTPSuccess(w.Status()) {
+				err = tx.Commit()
+			} else {
+				err = tx.Rollback()
+			}
+
+			if err != nil {
+				log.Println(err)
+			}
 		})
 	}
 }

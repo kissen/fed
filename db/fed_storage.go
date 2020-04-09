@@ -16,6 +16,17 @@ type FedStorage interface {
 	// Close the connection to the underlying database.
 	Close() error
 
+	// Start a new transaction. Remember to call Rollback or Commit!
+	Begin() (Tx, error)
+}
+
+type Tx interface {
+	// Commit all changes made within this transaciton.
+	Commit() error
+
+	// Undo all changes made by this transaction.
+	Rollback() error
+
 	// Retrieve the metadata for a user with the given username.
 	// If no such user exists, an error is returned.
 	RetrieveUser(username string) (*FedUser, error)

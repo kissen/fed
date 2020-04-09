@@ -16,7 +16,7 @@ type FedOAuthCode struct {
 
 // If username/password are valid credentials, create a new
 // code, store it into target and return it.
-func NewFedOAuthCode(username, password string, target FedStorage) (*FedOAuthCode, error) {
+func NewFedOAuthCode(username, password string, target Tx) (*FedOAuthCode, error) {
 	if err := CheckCredentials(username, password, target); err != nil {
 		return nil, err
 	}

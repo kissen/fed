@@ -16,7 +16,7 @@ type FedOAuthToken struct {
 
 // If username/password are valid credentials, create a new
 // token, store it into target and return it.
-func NewFedOAuthToken(username, password string, target FedStorage) (*FedOAuthToken, error) {
+func NewFedOAuthToken(username, password string, target Tx) (*FedOAuthToken, error) {
 	if err := CheckCredentials(username, password, target); err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func NewFedOAuthToken(username, password string, target FedStorage) (*FedOAuthTo
 }
 
 // Create a new token for username, store it into target and return it.
-func NewFedOAuthTokenFor(username string, target FedStorage) (*FedOAuthToken, error) {
+func NewFedOAuthTokenFor(username string, target Tx) (*FedOAuthToken, error) {
 	ot := &FedOAuthToken{
 		Token:    random(),
 		Username: username,
