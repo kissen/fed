@@ -369,6 +369,8 @@ func (fs *fedembeddedtx) Rollback() (err error) {
 		if err != nil {
 			fs.commitedError = errors.Wrap(err, "previous Rollback failed")
 		}
+
+		return err
 	}
 
 	return fs.commitedError
