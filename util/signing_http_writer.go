@@ -10,7 +10,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 )
+
+var dummyKey *rsa.PrivateKey
+var dummyKeyOnce sync.Once
 
 // Implements http.ResponseWriter
 type SigningHTTPWriter struct {
@@ -37,19 +41,26 @@ func NewSigningWriter() *SigningHTTPWriter {
 	sw := &SigningHTTPWriter{
 		header:  make(http.Header),
 		status:  http.StatusOK,
-		privkey: newKey(),
+		privkey: getKey(),
 	}
 
 	return sw
 }
 
-func newKey() *rsa.PrivateKey {
-	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		log.Fatal(err)
-	}
+// Return the RSA key
+//
+// XXX: Just returns a random new key for now. Not actually useful
+// for signing real responses.
+func getKey() *rsa.PrivateKey {
+	dummyKeyOnce.Do(func() {
+		var err error
 
-	return privkey
+		if dummyKey, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	return dummyKey
 }
 
 func (pw *SigningHTTPWriter) Header() http.Header {
