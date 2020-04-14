@@ -131,6 +131,7 @@ func InstallWebHandler(target *mux.Router, h http.HandlerFunc, pattern string, m
 // like nginx, but for now the goal is to have all in one staticly
 // compiled binary.
 func InstallStaticHandlers(router *mux.Router) {
+	router.HandleFunc("/favicon.ico", GetFavicon).Methods("GET")
 	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
 }
 

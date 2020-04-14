@@ -8,6 +8,11 @@ import (
 	"path"
 )
 
+// GET /favicon.ico
+func GetFavicon(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/static/inbox.svg", http.StatusPermanentRedirect)
+}
+
 // GET /static/*
 func GetStatic(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStatic(%v)", r.URL)
