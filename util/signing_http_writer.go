@@ -25,9 +25,6 @@ type SigningHTTPWriter struct {
 	// http.StatusOK in NewSigningWriter.
 	status int
 
-	// The signer used to sign the request.
-	signer httpsig.Signer
-
 	// The private key used to sign the request.
 	privkey *rsa.PrivateKey
 }
@@ -40,32 +37,10 @@ func NewSigningWriter() *SigningHTTPWriter {
 	sw := &SigningHTTPWriter{
 		header:  make(http.Header),
 		status:  http.StatusOK,
-		signer:  newSigner(),
 		privkey: newKey(),
 	}
 
 	return sw
-}
-
-func newSigner() httpsig.Signer {
-	as := []httpsig.Algorithm{
-		httpsig.RSA_SHA512, httpsig.RSA_SHA256,
-	}
-
-	hs := []string{
-		//httpsig.RequestTarget,
-		"date", "digest",
-	}
-
-	signer, _, err := httpsig.NewSigner(
-		as, httpsig.DigestSha256, hs, httpsig.Signature,
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return signer
 }
 
 func newKey() *rsa.PrivateKey {
@@ -110,7 +85,9 @@ func (pw *SigningHTTPWriter) ApplyTo(w http.ResponseWriter) error {
 	privkey := pw.privkey
 	hostname := config.Get().Hostname
 
-	if err := pw.signer.SignResponse(privkey, hostname, w, body); err != nil {
+	signer := pw.newSigner()
+
+	if err := signer.SignResponse(privkey, hostname, w, body); err != nil {
 		return errors.Wrap(err, "could not sign response")
 	}
 
@@ -124,6 +101,33 @@ func (pw *SigningHTTPWriter) ApplyTo(w http.ResponseWriter) error {
 	}
 
 	return nil
+}
+
+func (pw *SigningHTTPWriter) newSigner() httpsig.Signer {
+	// as contains the algorithms we consider using
+	as := []httpsig.Algorithm{
+		httpsig.RSA_SHA512, httpsig.RSA_SHA256,
+	}
+
+	// the digest algorithm to use
+	da := httpsig.DigestSha256
+
+	// hs contains the headers that our signature will cover
+	var hs []string
+	//hs = append(hs, httpsig.RequestTarget)
+	hs = append(hs, "date")
+	if pw.body.Len() > 0 {
+		hs = append(hs, "digest")
+	}
+
+	// create the signer; the api object we will use to sign
+	// our response
+	signer, _, err := httpsig.NewSigner(as, da, hs, httpsig.Signature)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return signer
 }
 
 // Add all headers in src to dst. Existing headers in dst are preserved.
