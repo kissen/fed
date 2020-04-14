@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 )
 
+// GET /static/*
 func GetStatic(w http.ResponseWriter, r *http.Request) {
 	log.Printf("GetStatic(%v)", r.URL)
 

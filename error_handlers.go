@@ -16,18 +16,6 @@ func MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
 	DoError(w, r, nil, http.StatusMethodNotAllowed)
 }
 
-// Return an HTTP error that indicates that the type was wrong.
-func WrongContentType(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		DoError(w, r, nil, http.StatusNotAcceptable)
-	case "POST":
-		fallthrough
-	case "PUT":
-		DoError(w, r, nil, http.StatusUnsupportedMediaType)
-	}
-}
-
 func DoError(w http.ResponseWriter, r *http.Request, cause interface{}, status int) {
 	ct := util.ContentType(r)
 

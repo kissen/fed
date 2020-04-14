@@ -103,6 +103,37 @@ func InstallApHandler(target *mux.Router, h http.HandlerFunc, pattern string) {
 	target.HandleFunc(pattern, h).Methods("POST").Headers("Content-Type", util.AP_TYPE)
 }
 
+// Install the handlers for the web interface.
+func InstallWebHandlers(router *mux.Router) {
+	InstallWebHandler(router, WebGetIndex, "/", "GET")
+	InstallWebHandler(router, WebGetStream, "/stream", "GET")
+	InstallWebHandler(router, WebGetLiked, "/liked", "GET")
+	InstallWebHandler(router, WebGetFollowing, "/following", "GET")
+	InstallWebHandler(router, WebGetFollowers, "/followers", "GET")
+	InstallWebHandler(router, WebGetRemote, "/remote/{remote_path:.+}", "GET")
+	InstallWebHandler(router, WebGetLogin, "/login", "GET")
+	InstallWebHandler(router, WebPostLogin, "/login", "POST")
+	InstallWebHandler(router, WebPostLogout, "/logout", "POST")
+	InstallWebHandler(router, WebPostSubmit, "/submit", "POST")
+	InstallWebHandler(router, WebPostReply, "/reply", "POST")
+	InstallWebHandler(router, WebPostRepeat, "/repeat", "POST")
+	InstallWebHandler(router, WebPostLike, "/like", "POST")
+}
+
+// Install web handler h for pattern and matching request methods.
+func InstallWebHandler(target *mux.Router, h http.HandlerFunc, pattern string, methods ...string) {
+	target.HandleFunc(pattern, h).Methods(methods...)
+}
+
+// Install handlers that take care of saving static/unchanging content.
+//
+// People might prefer to serve these files directy through something
+// like nginx, but for now the goal is to have all in one staticly
+// compiled binary.
+func InstallStaticHandlers(router *mux.Router) {
+	router.HandleFunc("/static/{.+}", GetStatic).Methods("GET")
+}
+
 // Install the different error handler. While the defaults from gorilla are
 // reasonable, we can be more specific.
 func InstallErrorHandlers(router *mux.Router) {
@@ -134,6 +165,8 @@ func main() {
 	InstallWellKnownHandlers(router)
 	InstallShimHandlers(router)
 	InstallApHandlers(router)
+	InstallWebHandlers(router)
+	InstallStaticHandlers(router)
 
 	InstallErrorHandlers(router)
 	InstallMiddleware(storage, router)
