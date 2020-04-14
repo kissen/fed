@@ -33,7 +33,7 @@ func WebGetStream(w http.ResponseWriter, r *http.Request) {
 	client := fedcontext.Context(r).Client
 	if client == nil {
 		fedcontext.FlashWarning(r, "authorization required")
-		http.Redirect(w, r, "/login", http.StatusFound)
+		fedcontext.Redirect(w, r, "/login")
 		return
 	}
 
@@ -58,7 +58,7 @@ func WebGetLiked(w http.ResponseWriter, r *http.Request) {
 	client := fedcontext.Context(r).Client
 	if client == nil {
 		fedcontext.FlashWarning(r, "authorization requried")
-		http.Redirect(w, r, "/login", http.StatusFound)
+		fedcontext.Redirect(w, r, "/login")
 		return
 	}
 
@@ -128,7 +128,7 @@ func WebGetLogin(w http.ResponseWriter, r *http.Request) {
 
 	if fedcontext.Context(r).Client != nil {
 		fedcontext.Flash(r, "already logged in")
-		http.Redirect(w, r, "/stream", http.StatusFound)
+		fedcontext.Redirect(w, r, "/stream")
 		return
 	}
 
@@ -173,7 +173,7 @@ func WebPostLogin(w http.ResponseWriter, r *http.Request) {
 
 	// we are just logged on; forward to stream page for now
 	fedcontext.Flash(r, "successfully logged in")
-	http.Redirect(w, r, "/stream", http.StatusFound)
+	fedcontext.Redirect(w, r, "/stream")
 }
 
 // POST /logout
@@ -186,7 +186,7 @@ func WebPostLogout(w http.ResponseWriter, r *http.Request) {
 
 	// redirect to login page
 	fedcontext.Flash(r, "logged out")
-	http.Redirect(w, r, "/login", http.StatusFound)
+	fedcontext.Redirect(w, r, "/login")
 }
 
 // POST /submit
@@ -215,7 +215,7 @@ func WebPostSubmit(w http.ResponseWriter, r *http.Request) {
 	client := fedcontext.Context(r).Client
 	if client == nil {
 		fedcontext.FlashWarning(r, "authorization requried")
-		http.Redirect(w, r, "/login", http.StatusFound)
+		fedcontext.Redirect(w, r, "/login")
 		return
 	}
 
@@ -245,7 +245,7 @@ func WebPostSubmit(w http.ResponseWriter, r *http.Request) {
 	// redirect to index page for now; we'll improve this later
 
 	fedcontext.Flash(r, "submitted")
-	http.Redirect(w, r, "/", http.StatusFound)
+	fedcontext.Redirect(w, r, "/")
 }
 
 // POST /reply
@@ -281,7 +281,7 @@ func WebPostLike(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fedcontext.Flash(r, "liked")
-	http.Redirect(w, r, "/", http.StatusFound)
+	fedcontext.Redirect(w, r, "/")
 }
 
 // Try to get the iri_base64 form value from POST request r.
