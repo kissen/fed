@@ -1,8 +1,12 @@
 # fed
 
-Trying to build a server for [ActivityPub](https://www.w3.org/TR/activitypub/)
-that can handle all objects defined in the standard. Development happens in
-the `experiment/` branches, `master` doesn't even build right now.
+Trying to build a server for
+[ActivityPub](https://www.w3.org/TR/activitypub/) that can handle all
+objects defined in the standard. Development happens in the
+`experiment/` branches. I work on this project when I have free time
+and am motivated.  This happened in a while, but maybe the code is
+useful for people interested in ActivityPub and in particular the
+[go-fed/activity](https://github.com/go-fed/activity) library.
 
 ## What I Would Like
 
