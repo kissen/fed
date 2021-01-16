@@ -1,6 +1,6 @@
 package fedcontext
 
-import "gitlab.cs.fau.de/kissen/fed/fediri"
+import "github.com/kissen/fed/fediri"
 
 // If fc is a client for a user on this instance, return the
 // username of that user.

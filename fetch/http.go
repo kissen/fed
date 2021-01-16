@@ -3,8 +3,8 @@ package fetch
 import (
 	"bytes"
 	"fmt"
-	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/util"
+	"github.com/kissen/fed/errors"
+	"github.com/kissen/fed/util"
 	"io/ioutil"
 	"log"
 	"net/http"

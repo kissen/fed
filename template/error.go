@@ -2,7 +2,7 @@ package template
 
 import (
 	"github.com/kissen/httpstatus"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fedcontext"
 	"net/http"
 )
 

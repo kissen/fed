@@ -3,9 +3,9 @@ package fedcontext
 import (
 	"fmt"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/fediri"
-	"gitlab.cs.fau.de/kissen/fed/fetch"
+	"github.com/kissen/fed/errors"
+	"github.com/kissen/fed/fediri"
+	"github.com/kissen/fed/fetch"
 	"net/url"
 )
 

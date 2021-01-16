@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/BurntSushi/toml"
-	"gitlab.cs.fau.de/kissen/fed/errors"
+	"github.com/kissen/fed/errors"
 	"io/ioutil"
 	"log"
 	"net/url"

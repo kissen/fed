@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gitlab.cs.fau.de/kissen/fed/errors"
+	"github.com/kissen/fed/errors"
 	"log"
 	"net/http"
 )

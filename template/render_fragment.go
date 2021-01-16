@@ -2,7 +2,7 @@ package template
 
 import (
 	"bytes"
-	"gitlab.cs.fau.de/kissen/fed/errors"
+	"github.com/kissen/fed/errors"
 	"html/template"
 )
 

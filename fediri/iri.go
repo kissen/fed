@@ -3,8 +3,8 @@ package fediri
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"gitlab.cs.fau.de/kissen/fed/config"
-	"gitlab.cs.fau.de/kissen/fed/errors"
+	"github.com/kissen/fed/config"
+	"github.com/kissen/fed/errors"
 	"net/http"
 	"net/url"
 	"path"

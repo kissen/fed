@@ -3,11 +3,11 @@ package main
 import (
 	"github.com/go-fed/activity/pub"
 	"github.com/gorilla/mux"
-	"gitlab.cs.fau.de/kissen/fed/ap"
-	"gitlab.cs.fau.de/kissen/fed/config"
-	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/util"
+	"github.com/kissen/fed/ap"
+	"github.com/kissen/fed/config"
+	"github.com/kissen/fed/db"
+	"github.com/kissen/fed/fedcontext"
+	"github.com/kissen/fed/util"
 	"log"
 	"net/http"
 )

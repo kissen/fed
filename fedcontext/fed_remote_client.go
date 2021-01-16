@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/fetch"
-	"gitlab.cs.fau.de/kissen/fed/prop"
-	"gitlab.cs.fau.de/kissen/fed/util"
+	"github.com/kissen/fed/fetch"
+	"github.com/kissen/fed/prop"
+	"github.com/kissen/fed/util"
 	"net/url"
 	"time"
 )

@@ -2,7 +2,7 @@ package fedcontext
 
 import (
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/fetch"
+	"github.com/kissen/fed/fetch"
 	"net/url"
 )
 

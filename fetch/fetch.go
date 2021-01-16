@@ -3,8 +3,8 @@ package fetch
 import (
 	"github.com/go-fed/activity/streams/vocab"
 	"github.com/kissen/complcache"
-	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/marshal"
+	"github.com/kissen/fed/errors"
+	"github.com/kissen/fed/marshal"
 	"log"
 	"net/url"
 	"time"

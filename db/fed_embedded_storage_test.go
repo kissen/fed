@@ -3,7 +3,7 @@ package db
 import (
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/prop"
+	"github.com/kissen/fed/prop"
 	"net/url"
 	"os"
 	"path/filepath"

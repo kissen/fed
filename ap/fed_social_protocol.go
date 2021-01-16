@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/go-fed/activity/pub"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/fediri"
+	"github.com/kissen/fed/errors"
+	"github.com/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fediri"
 	"log"
 	"net/http"
 )

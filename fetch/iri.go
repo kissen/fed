@@ -2,7 +2,7 @@ package fetch
 
 import (
 	"errors"
-	"gitlab.cs.fau.de/kissen/fed/prop"
+	"github.com/kissen/fed/prop"
 	"net/url"
 )
 

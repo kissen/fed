@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/go-fed/activity/pub"
-	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/util"
+	"github.com/kissen/fed/db"
+	"github.com/kissen/fed/errors"
+	"github.com/kissen/fed/util"
 	"net/http"
 )
 

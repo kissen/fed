@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gitlab.cs.fau.de/kissen/fed/template"
-	"gitlab.cs.fau.de/kissen/fed/util"
+	"github.com/kissen/fed/template"
+	"github.com/kissen/fed/util"
 	"net/http"
 )
 

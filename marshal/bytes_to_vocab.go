@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/go-fed/activity/streams"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/errors"
+	"github.com/kissen/fed/errors"
 )
 
 // Unmarshal binary representation bin to a vocab.Type object.

@@ -2,10 +2,10 @@ package ap
 
 import (
 	"context"
-	"gitlab.cs.fau.de/kissen/fed/errors"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/fetch"
-	"gitlab.cs.fau.de/kissen/fed/marshal"
+	"github.com/kissen/fed/errors"
+	"github.com/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fetch"
+	"github.com/kissen/fed/marshal"
 	"log"
 	"net/url"
 )

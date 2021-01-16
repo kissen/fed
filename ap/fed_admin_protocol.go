@@ -2,9 +2,9 @@ package ap
 
 import (
 	"context"
-	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/fediri"
+	"github.com/kissen/fed/db"
+	"github.com/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fediri"
 	"log"
 	"net/http"
 	"sync"

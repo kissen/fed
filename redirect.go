@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fedcontext"
 	"net/http"
 )
 

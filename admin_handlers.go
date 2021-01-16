@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.cs.fau.de/kissen/fed/ap"
+	"github.com/kissen/fed/ap"
 	"log"
 	"net/http"
 )

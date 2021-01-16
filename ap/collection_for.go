@@ -3,10 +3,10 @@ package ap
 import (
 	"context"
 	"github.com/go-fed/activity/streams/vocab"
-	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/fediri"
-	"gitlab.cs.fau.de/kissen/fed/prop"
+	"github.com/kissen/fed/db"
+	"github.com/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fediri"
+	"github.com/kissen/fed/prop"
 	"log"
 	"net/url"
 )

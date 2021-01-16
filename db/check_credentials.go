@@ -1,7 +1,7 @@
 package db
 
 import (
-	"gitlab.cs.fau.de/kissen/fed/errors"
+	"github.com/kissen/fed/errors"
 )
 
 // Check credentials in storage s. If they are valid credentials,

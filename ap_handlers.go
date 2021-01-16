@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fedcontext"
 	"log"
 	"net/http"
 )

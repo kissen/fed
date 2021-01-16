@@ -3,9 +3,9 @@ package fedcontext
 import (
 	"context"
 	"github.com/go-fed/activity/pub"
-	"gitlab.cs.fau.de/kissen/fed/db"
-	"gitlab.cs.fau.de/kissen/fed/fediri"
-	"gitlab.cs.fau.de/kissen/fed/util"
+	"github.com/kissen/fed/db"
+	"github.com/kissen/fed/fediri"
+	"github.com/kissen/fed/util"
 	"log"
 	"net/http"
 )

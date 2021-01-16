@@ -1,8 +1,8 @@
 package template
 
 import (
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
-	"gitlab.cs.fau.de/kissen/fed/fetch"
+	"github.com/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fetch"
 	"net/http"
 )
 

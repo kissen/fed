@@ -1,7 +1,7 @@
 package template
 
 import (
-	"gitlab.cs.fau.de/kissen/fed/fedcontext"
+	"github.com/kissen/fed/fedcontext"
 	"net/http"
 	"net/url"
 )
